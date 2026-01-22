@@ -241,6 +241,22 @@ export const WorkoutSessionRepository = {
     },
 
     /**
+     * Get session count for date range
+     */
+    getSessionCount: async (userId: number, startDate: string, endDate: string): Promise<number> => {
+        const db = await getDBConnection();
+        const result = await db.getAllAsync<{ count: number }>(
+            `SELECT COUNT(*) as count 
+             FROM workout_sessions 
+             WHERE user_id = ? 
+             AND date(started_at) >= date(?) 
+             AND date(started_at) <= date(?)`,
+            userId, startDate, endDate
+        );
+        return result[0]?.count || 0;
+    },
+
+    /**
      * Get the most recent completed session for a user
      */
     getLastSession: async (userId: number): Promise<SessionWithExercises | null> => {

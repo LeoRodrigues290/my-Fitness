@@ -15,13 +15,14 @@ const { width } = Dimensions.get('window');
 export const WeightScreen = ({ navigation }: any) => {
     const { currentUser } = useUser();
     const [data, setData] = useState<any>({ labels: [], datasets: [] });
+    const [history, setHistory] = useState<any[]>([]);
 
     const loadData = async () => {
         if (!currentUser) return;
         try {
             const logs = await UserRepository.getWeightLogs(currentUser.id);
             // Sort by date ascending for chart
-            const sortedLogs = [...(logs || [] as Array<{date: string, weight: number}>)].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const sortedLogs = [...(logs || [] as Array<{ date: string, weight: number }>)].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
             const labels = sortedLogs.map(log => format(new Date(log.date), 'MM/dd'));
             const dataValues = sortedLogs.map(log => log.weight);
@@ -30,6 +31,7 @@ export const WeightScreen = ({ navigation }: any) => {
                 labels: labels,
                 datasets: [{ data: dataValues }]
             });
+            setHistory(sortedLogs);
         } catch (e) {
             console.error(e);
         }
@@ -100,7 +102,7 @@ export const WeightScreen = ({ navigation }: any) => {
             <View style={styles.listContainer}>
                 <Text style={styles.historyTitle}>Histórico</Text>
                 <FlatList
-                    data={[...data].reverse()}
+                    data={[...history].reverse()}
                     keyExtractor={(item) => item.fullDate}
                     renderItem={renderItem}
                     contentContainerStyle={styles.list}

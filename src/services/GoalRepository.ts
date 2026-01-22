@@ -1,9 +1,16 @@
 import { getDBConnection } from '../database/db';
 
+export interface UserGoalDB {
+    calorie_goal: number;
+    burn_goal: number;
+    protein_goal: number;
+    carbs_goal: number;
+}
+
 export const GoalRepository = {
-    getGoals: async (userId: number) => {
+    getGoals: async (userId: number): Promise<UserGoalDB> => {
         const db = await getDBConnection();
-        const result = await db.getAllAsync(
+        const result = await db.getAllAsync<UserGoalDB>(
             'SELECT * FROM user_goals WHERE user_id = ?',
             userId
         );
