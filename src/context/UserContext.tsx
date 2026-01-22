@@ -8,6 +8,41 @@ type User = {
     avatar_uri?: string;
 };
 
+// Exported interfaces at top level
+export interface Meal {
+    id: string;
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    section: string;
+}
+
+export interface DailyStats {
+    date: string;
+    caloriesConsumed: number;
+    proteinConsumed: number;
+    carbsConsumed: number;
+    waterConsumed: number;
+    meals: Meal[];
+}
+
+export interface WeekSchedule {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+}
+
+export interface UserPreferences {
+    goals: { kcal: number; protein: number; carbs: number; weight: number; water: number };
+    schedule: WeekSchedule;
+}
+
 interface UserContextType {
     currentUser: User | null;
     selectUser: (userId: number) => Promise<void>;
@@ -17,6 +52,9 @@ interface UserContextType {
     setUser: (user: User | null) => void;
     userPreferences: UserPreferences;
     updatePreferences: (newPrefs: Partial<UserPreferences>) => Promise<void>;
+    dailyStats: DailyStats;
+    updateDailyStats: (newStats: Partial<DailyStats>) => void;
+    addMeal: (meal: Meal) => void;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -32,6 +70,15 @@ const defaultPreferences: UserPreferences = {
     }
 };
 
+const defaultDailyStats: DailyStats = {
+    date: new Date().toISOString().split('T')[0],
+    caloriesConsumed: 0,
+    proteinConsumed: 0,
+    carbsConsumed: 0,
+    waterConsumed: 0,
+    meals: []
+};
+
 const UserContext = createContext<UserContextType>({
     currentUser: null,
     selectUser: async () => { },
@@ -39,6 +86,11 @@ const UserContext = createContext<UserContextType>({
     users: [],
     loading: true,
     setUser: () => { },
+    userPreferences: defaultPreferences,
+    updatePreferences: async () => { },
+    dailyStats: defaultDailyStats,
+    updateDailyStats: () => { },
+    addMeal: () => { },
 });
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,22 +98,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [userPreferences, setUserPreferences] = useState<UserPreferences>(defaultPreferences);
+    const [dailyStats, setDailyStats] = useState<DailyStats>(defaultDailyStats);
 
     const loadUsers = async () => {
         try {
             const db = await getDBConnection();
             const result: User[] = await db.getAllAsync('SELECT * FROM users');
-
-            // If empty, seed mock users for the demo
-            if (result.length === 0) {
-                // Logic to seed if needed, but for now we rely on the implementation plan's "Manage Profiles" flow or manual insert
-                // Actually, if result is empty, let's inject Léo and Oliver for the user experience
-                /* 
-                await db.runAsync("INSERT INTO users (name, avatar_uri) VALUES ('Léo', 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&h=200')");
-                await db.runAsync("INSERT INTO users (name, avatar_uri) VALUES ('Oliver', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200')");
-                */
-            }
-
             setUsers(result);
 
             const savedUserId = await AsyncStorage.getItem('current_user_id');
@@ -104,7 +146,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    // Intercept selectUser/setUser to load prefs
     const handleSetUser = async (user: User | null) => {
         setCurrentUser(user);
         if (user) {
@@ -137,7 +178,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 userId
             );
 
-            // Update local state directly to reflect changes immediately in UI
             setUsers(prev => prev.map(u => u.id === userId ? { ...u, name, avatar_uri: avatarUri || u.avatar_uri } : u));
             if (currentUser?.id === userId) {
                 setCurrentUser(prev => prev ? { ...prev, name, avatar_uri: avatarUri || prev.avatar_uri } : null);
@@ -147,22 +187,24 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const [dailyStats, setDailyStats] = useState<DailyStats>({
-        date: new Date().toISOString().split('T')[0],
-        caloriesConsumed: 0,
-        proteinConsumed: 0,
-        carbsConsumed: 0,
-        waterConsumed: 0
-    });
-
     const updateDailyStats = (newStats: Partial<DailyStats>) => {
         setDailyStats(prev => ({ ...prev, ...newStats }));
+    };
+
+    const addMeal = (meal: Meal) => {
+        setDailyStats(prev => ({
+            ...prev,
+            caloriesConsumed: prev.caloriesConsumed + meal.calories,
+            proteinConsumed: prev.proteinConsumed + meal.protein,
+            carbsConsumed: prev.carbsConsumed + meal.carbs,
+            meals: [...prev.meals, meal]
+        }));
     };
 
     return (
         <UserContext.Provider value={{
             currentUser, selectUser, updateUser, users, loading, setUser: handleSetUser,
-            userPreferences, updatePreferences, dailyStats, updateDailyStats
+            userPreferences, updatePreferences, dailyStats, updateDailyStats, addMeal
         }}>
             {children}
         </UserContext.Provider>

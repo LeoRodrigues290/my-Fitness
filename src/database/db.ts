@@ -100,11 +100,13 @@ export const initDatabase = async () => {
     `);
 
     // Seed initial users if empty
+    // REMOVED - Using OnboardingScreen for first user creation
+    /*
     const users = await database.getAllAsync('SELECT * FROM users');
     if (users.length === 0) {
-      await database.runAsync('INSERT INTO users (name) VALUES (?)', 'User 1');
-      await database.runAsync('INSERT INTO users (name) VALUES (?)', 'User 2');
+      await database.runAsync('INSERT INTO users (name) VALUES (?)', 'Atleta');
     }
+    */
 
     console.log('Database initialized successfully');
   } catch (error) {

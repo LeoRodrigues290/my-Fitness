@@ -30,20 +30,39 @@ export const WorkoutRepository = {
 
     getWorkouts: async (userId: number) => {
         const db = await getDBConnection();
-        const workouts: any[] = await db.getAllAsync(
-            'SELECT * FROM workouts WHERE user_id = ? ORDER BY date DESC',
-            userId
-        );
+        // Fetch everything in a single query using JOIN
+        const rows = await db.getAllAsync(`
+            SELECT w.*, we.id as ex_id, we.exercise_name, we.sets, we.reps, we.weight
+            FROM workouts w
+            LEFT JOIN workout_exercises we ON w.id = we.workout_id
+            WHERE w.user_id = ?
+            ORDER BY w.date DESC
+        `, userId);
 
-        for (let w of workouts) {
-            const exercises = await db.getAllAsync(
-                'SELECT * FROM workout_exercises WHERE workout_id = ?',
-                w.id
-            );
-            w.exercises = exercises;
-        }
+        // Group data in JavaScript (faster than N+1 queries)
+        const workoutsMap = new Map();
+        rows.forEach((row: any) => {
+            if (!workoutsMap.has(row.id)) {
+                workoutsMap.set(row.id, {
+                    id: row.id,
+                    user_id: row.user_id,
+                    date: row.date,
+                    muscle_group: row.muscle_group,
+                    notes: row.notes,
+                    exercises: []
+                });
+            }
+            if (row.ex_id) { // If there is an exercise
+                workoutsMap.get(row.id).exercises.push({
+                    name: row.exercise_name,
+                    sets: row.sets,
+                    reps: row.reps,
+                    weight: row.weight
+                });
+            }
+        });
 
-        return workouts;
+        return Array.from(workoutsMap.values());
     },
 
     getLastWorkout: async (userId: number) => {

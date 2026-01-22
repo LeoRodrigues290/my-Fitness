@@ -49,7 +49,10 @@ import {
 import Svg, { Defs, RadialGradient, Stop, Rect, Circle } from 'react-native-svg';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { Calendar as RNCalendar, LocaleConfig } from 'react-native-calendars';
-import { useUser, WeekSchedule } from '../context/UserContext';
+import { useUser, WeekSchedule, Meal } from '../context/UserContext';
+import { UserRepository } from '../services/UserRepository';
+import { OnboardingScreen } from './onboarding/OnboardingScreen';
+import { searchFood, FoodItem } from '../data/foodDatabase';
 
 // Calendar Locale Config (PT-BR)
 LocaleConfig.locales['pt-br'] = {
@@ -198,11 +201,11 @@ const GlassFitnessApp = () => {
       const restWorkout = {
         id: 'rest',
         title: "Dia de Descanso",
-        subtitle: "Recuperação Ativa",
+        subtitle: "Recuperação & Sono",
         duration: "0 min",
         calories: "0 kcal",
-        level: "Relax",
-        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070&auto=format&fit=crop", // calming image
+        level: "Essencial",
+        image: "https://images.unsplash.com/photo-1511978293554-7b92f19bd77d?q=80&w=2070&auto=format&fit=crop",
         exercises: []
       };
       // @ts-ignore
@@ -211,94 +214,25 @@ const GlassFitnessApp = () => {
   }, [userPreferences.schedule]);
 
   const handleWorkoutClick = (workout: any) => {
-    // If it's a rest day object, maybe don't open details or open a specific rest view
-    if (workout.id === 'rest') return;
+    if (workout.id === 'rest') return; // No action for rest day
     setActiveWorkout(workout);
     setCurrentScreen('details');
   };
 
+  const handleEnter = () => {
+    setCurrentScreen('home');
+  };
+
   const handleTabPress = (tab: string) => {
     setActiveTab(tab);
-    setCurrentScreen(tab); // Map tabs to screens
+    setCurrentScreen(tab);
   };
 
-  const handleLogout = () => {
-    if (setUser) {
-      setUser(null);
-      setCurrentScreen('login');
-    }
+  const handleLogout = async () => {
+    await setUser(null);
   };
 
-  // --- Screens Components ---
-
-  // --- Screens Components ---
-
-  const LoginScreen = () => (
-    <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.slate950 }}>
-      {/* Background Image */}
-      <View style={StyleSheet.absoluteFill}>
-        <Image
-          source={{ uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop" }}
-          style={{ width: '100%', height: '100%' }}
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(2, 6, 23, 0.9)', '#020617']}
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
-
-      {/* Content */}
-      <SafeAreaView style={{ paddingHorizontal: 32, paddingBottom: 60, alignItems: 'center' }}>
-        <View style={{ marginBottom: 40, alignItems: 'center' }}>
-          <View style={{
-            width: 64, height: 64, backgroundColor: colors.lime400,
-            borderRadius: 16, alignItems: 'center', justifyContent: 'center',
-            marginBottom: 24, shadowColor: colors.lime400,
-            shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.3, shadowRadius: 20
-          }}>
-            <Dumbbell size={32} color={colors.slate900} fill={colors.slate900} />
-          </View>
-          <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.white, marginBottom: 8 }}>My Fitness</Text>
-          <Text style={{ fontSize: 18, color: colors.slate400 }}>Quem vai treinar hoje?</Text>
-        </View>
-
-        {/* User Selection Grid */}
-        <View style={{ flexDirection: 'row', gap: 24, marginBottom: 40 }}>
-          {((users && users.length > 0) ? users : [
-            { id: 1, name: "Léo", avatar_uri: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&h=200" },
-            { id: 2, name: "Oliver", avatar_uri: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200" }
-          ]).map((user: any, index: number) => (
-            <TouchableOpacity
-              key={user.id || index}
-              onPress={() => {
-                if (setUser) setUser(user);
-                setCurrentScreen('home');
-              }}
-              activeOpacity={0.8}
-              style={{ alignItems: 'center' }}
-            >
-              <View style={{
-                width: 100, height: 100, borderRadius: 50, borderWidth: 2,
-                borderColor: colors.lime400, marginBottom: 12, position: 'relative',
-                shadowColor: colors.lime400, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8
-              }}>
-                <Image
-                  source={{ uri: user.avatar_uri }}
-                  style={{ width: '100%', height: '100%', borderRadius: 50 }}
-                />
-              </View>
-              <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 18, marginBottom: 4 }}>{user.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity>
-          <Text style={{ color: colors.slate500, fontSize: 14 }}>Gerenciar Perfis</Text>
-        </TouchableOpacity>
-
-      </SafeAreaView>
-    </View>
-  );
+  // ... (LoginScreen logic remains)
 
   const HomeScreen = () => (
     <ScrollView
@@ -323,7 +257,7 @@ const GlassFitnessApp = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Stats Cards - New 4 Grid Layout */}
+      {/* Stats Cards ... (Keep as is) */}
       <View style={{ flexDirection: 'row', gap: 12, marginBottom: 32 }}>
         {/* Calories */}
         <View style={{ flex: 1, backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.slate700, alignItems: 'center' }}>
@@ -361,11 +295,11 @@ const GlassFitnessApp = () => {
 
       <TouchableOpacity
         style={styles.heroCard}
-        onPress={() => handleWorkoutClick(workoutsData[0])}
+        onPress={() => handleWorkoutClick(activeWorkout)}
         activeOpacity={0.9}
       >
         <Image
-          source={{ uri: workoutsData[0].image }}
+          source={{ uri: activeWorkout.image }}
           style={styles.heroImage}
         />
         <LinearGradient
@@ -376,95 +310,363 @@ const GlassFitnessApp = () => {
         <View style={styles.heroContent}>
           <View style={styles.tagsRow}>
             <BlurView intensity={20} style={styles.tagBlur}>
-              <Text style={styles.tagTextLime}>{workoutsData[0].level}</Text>
+              <Text style={styles.tagTextLime}>{activeWorkout.level}</Text>
             </BlurView>
             <BlurView intensity={20} style={styles.tagBlur}>
-              <Text style={styles.tagTextWhite}>{workoutsData[0].duration}</Text>
+              <Text style={styles.tagTextWhite}>{activeWorkout.duration}</Text>
             </BlurView>
           </View>
-          <Text style={styles.heroTitle}>{workoutsData[0].title}</Text>
-          <Text style={styles.heroSubtitle}>{workoutsData[0].subtitle}</Text>
+          <Text style={styles.heroTitle}>{activeWorkout.title}</Text>
+          <Text style={styles.heroSubtitle}>{activeWorkout.subtitle}</Text>
 
-          <TouchableOpacity style={styles.startButton} onPress={() => handleWorkoutClick(workoutsData[0])}>
-            <Play size={18} color={colors.slate950} fill={colors.slate900} />
-            <Text style={styles.startButtonText}>Começar Agora</Text>
-          </TouchableOpacity>
+          {activeWorkout.id !== 'rest' && (
+            <TouchableOpacity style={styles.startButton} onPress={() => handleWorkoutClick(activeWorkout)}>
+              <Play size={18} color={colors.slate950} fill={colors.slate900} />
+              <Text style={styles.startButtonText}>Começar Agora</Text>
+            </TouchableOpacity>
+          )}
+          {activeWorkout.id === 'rest' && (
+            <View style={[styles.startButton, { backgroundColor: colors.slate700 }]}>
+              <Clock size={18} color={colors.slate400} />
+              <Text style={[styles.startButtonText, { color: colors.slate300 }]}>Aproveite o Descanso</Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
+      id: 'rest',
+      title: "Dia de Descanso",
+      subtitle: "Recuperação Ativa",
+      duration: "0 min",
+      calories: "0 kcal",
+      level: "Relax",
+      image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070&auto=format&fit=crop", // calming image
+      exercises: []
+      };
+      // @ts-ignore
+      setActiveWorkout(restWorkout);
+    }
+  }, [userPreferences.schedule]);
 
-      {/* New Section: Your Routine */}
-      <View style={styles.horizontalSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Sua Rotina</Text>
-          <ArrowRight size={18} color={colors.slate500} />
+  const handleWorkoutClick = (workout: any) => {
+    // If it's a rest day object, maybe don't open details or open a specific rest view
+    if (workout.id === 'rest') return;
+      setActiveWorkout(workout);
+      setCurrentScreen('details');
+  };
+
+  const handleTabPress = (tab: string) => {
+        setActiveTab(tab);
+      setCurrentScreen(tab); // Map tabs to screens
+  };
+
+  const handleLogout = () => {
+    if (setUser) {
+        setUser(null);
+      setCurrentScreen('login');
+    }
+  };
+
+      // --- Screens Components ---
+
+      // --- Screens Components ---
+
+      // --- MOTIVATIONAL QUOTES ---
+      // --- MOTIVATIONAL QUOTES ---
+      const MOTIVATIONAL_QUOTES = [
+      "Treina fofo, fica fofo. 💀",
+      "O shape não vem de brinde. Vai buscar.",
+      "Só vai. Depois cê descansa.",
+      "Bora ficar monstro ou vai chorar? 😭",
+      "A meta é o espelho ter medo de você.",
+      "Se fosse fácil, todo mundo era fit.",
+      "Sem dor, sem ganho. O clássico nunca erra.",
+      "Levanta esse peso, a gravidade não vai ajudar.",
+      "Hoje tá pago? Então corre.",
+      "Tá doendo? Que pena. Continua.",
+      "Chora agora, ri na praia. 🏖️",
+      "Frango não tem opinião. 🐔",
+      "Desculpa é pros fracos.",
+      "Hoje ninguém vai treinar por você.",
+      "A dor passa, o orgulho fica.",
+      "Projeto verão? Não, projeto vida toda.",
+      "Menos desculpas, mais repetições.",
+      "Fecha a cara e treina. 😠",
+      "Sua melhor versão tá te esperando na última repetição.",
+      "Não conta as reps, faz valer.",
+      "Cansou? Aprenda a descansar, não a desistir.",
+      "Shape em construção... 🚧",
+      "Vem monstro! 💪",
+      "Sai do sofá e vai pra guerra.",
+      "O corpo alcança o que a mente acredita.",
+      ];
+
+  // --- WELCOME SCREEN (Replaces Login) ---
+  const LoginScreen = () => {
+    const [quote, setQuote] = useState('');
+      const [streak, setStreak] = useState(0);
+
+    useEffect(() => {
+        setQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
+
+      const loadStreak = async () => {
+        if (users && users.length > 0) {
+          try {
+            // Fetch streak for the primary user (first one)
+            const streakVal = await UserRepository.getUserStreak(users[0].id);
+      setStreak(streakVal);
+          } catch (e) {
+        console.log("Error loading streak", e);
+          }
+        }
+      };
+      loadStreak();
+    }, [users]);
+
+    const handleEnter = () => {
+      if (users && users.length > 0) {
+        if (setUser) setUser(users[0]);
+      setCurrentScreen('home');
+      } else {
+        // Fallback if no user loaded yet (shouldn't happen with db init)
+        console.warn("No user found");
+      }
+    };
+
+      return (
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.slate950 }}>
+        {/* Background Image */}
+        <View style={StyleSheet.absoluteFill}>
+          <Image
+            source={{ uri: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop" }}
+            style={{ width: '100%', height: '100%', opacity: 0.6 }}
+          />
+          <LinearGradient
+            colors={['#020617', 'rgba(2, 6, 23, 0.8)', '#020617']}
+            style={StyleSheet.absoluteFill}
+          />
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
-          {workoutsData.slice(1).map((workout) => (
+        <SafeAreaView style={{ paddingHorizontal: 32, alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+
+          {/* App Logo/Icon */}
+          <View style={{ marginBottom: 40, alignItems: 'center' }}>
+            <View style={{
+              width: 80, height: 80, backgroundColor: colors.lime400,
+              borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+              marginBottom: 24, shadowColor: colors.lime400,
+              shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 30
+            }}>
+              <Dumbbell size={40} color={colors.slate900} fill={colors.slate900} />
+            </View>
+          </View>
+
+          {/* Glass Card */}
+          <BlurView intensity={30} tint="light" style={{
+            width: '100%', padding: 32, borderRadius: 32, backgroundColor: 'rgba(30, 41, 59, 0.3)',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center'
+          }}>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.white, marginBottom: 24 }}>Bem-vindo de volta!</Text>
+
+            {/* Streak Counter */}
+            <View style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 32,
+              backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100
+            }}>
+              <Flame size={24} color={colors.orange400} fill={colors.orange400} />
+              <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold' }}>{streak} dias seguidos</Text>
+            </View>
+
+            {/* Quote */}
+            <View style={{ marginBottom: 40 }}>
+              <Text style={{ color: colors.slate300, fontSize: 16, fontStyle: 'italic', textAlign: 'center', lineHeight: 24 }}>
+                "{quote}"
+              </Text>
+            </View>
+
+            {/* Action Button */}
+            <TouchableOpacity
+              onPress={handleEnter}
+              style={{
+                width: '100%', backgroundColor: colors.lime400, paddingVertical: 18, borderRadius: 16,
+                alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8,
+                shadowColor: colors.lime400, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12
+              }}
+            >
+              <Text style={{ color: colors.slate950, fontWeight: 'bold', fontSize: 16, letterSpacing: 1 }}>BORA TREINAR</Text>
+              <ArrowRight size={20} color={colors.slate950} />
+            </TouchableOpacity>
+          </BlurView>
+
+        </SafeAreaView>
+      </View>
+      );
+  };
+
+  const HomeScreen = () => (
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 120, paddingTop: insets.top + 20 }}
+        showsVerticalScrollIndicator={false}
+        style={styles.screenContainer}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.welcomeText}>Bem-vindo de volta,</Text>
+            <Text style={styles.userNameText}>{userName} 👋</Text>
+          </View>
+          <TouchableOpacity onPress={() => handleTabPress('profile')}>
+            <View style={styles.avatarContainer}>
+              {currentUser?.avatar_uri ? (
+                <Image source={{ uri: currentUser.avatar_uri }} style={styles.avatar} />
+              ) : (
+                <User size={20} color={colors.white} /> // Fallback icon
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Stats Cards - New 4 Grid Layout */}
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 32 }}>
+          {/* Calories */}
+          <View style={{ flex: 1, backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.slate700, alignItems: 'center' }}>
+            <Flame size={20} color={colors.orange400} style={{ marginBottom: 8 }} />
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{dailyStats ? dailyStats.caloriesConsumed : 0}</Text>
+            <Text style={{ color: colors.slate400, fontSize: 10 }}>/{userPreferences.goals.kcal}</Text>
+          </View>
+          {/* Protein */}
+          <View style={{ flex: 1, backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.slate700, alignItems: 'center' }}>
+            <Beef size={20} color={colors.red500} style={{ marginBottom: 8 }} />
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{dailyStats ? dailyStats.proteinConsumed : 0}g</Text>
+            <Text style={{ color: colors.slate400, fontSize: 10 }}>/{userPreferences.goals.protein}</Text>
+          </View>
+          {/* Carbs */}
+          <View style={{ flex: 1, backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.slate700, alignItems: 'center' }}>
+            <Wheat size={20} color={colors.lime400} style={{ marginBottom: 8 }} />
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{dailyStats ? dailyStats.carbsConsumed : 0}g</Text>
+            <Text style={{ color: colors.slate400, fontSize: 10 }}>/{userPreferences.goals.carbs}</Text>
+          </View>
+          {/* Water */}
+          <View style={{ flex: 1, backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 20, borderWidth: 1, borderColor: colors.slate700, alignItems: 'center' }}>
+            <Droplet size={20} color={colors.blue400} style={{ marginBottom: 8 }} />
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{dailyStats ? dailyStats.waterConsumed / 1000 : 0}L</Text>
+            <Text style={{ color: colors.slate400, fontSize: 10 }}>/{userPreferences.goals.water / 1000}L</Text>
+          </View>
+        </View>
+
+        {/* Today's Workout Card (Hero) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Treino de Hoje</Text>
+          <TouchableOpacity onPress={() => setCurrentScreen('calendar')}>
+            <Text style={styles.linkText}>Ver calendário</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={styles.heroCard}
+          onPress={() => handleWorkoutClick(workoutsData[0])}
+          activeOpacity={0.9}
+        >
+          <Image
+            source={{ uri: workoutsData[0].image }}
+            style={styles.heroImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(2, 6, 23, 0.4)', '#020617']}
+            style={styles.heroGradient}
+          />
+
+          <View style={styles.heroContent}>
+            <View style={styles.tagsRow}>
+              <BlurView intensity={20} style={styles.tagBlur}>
+                <Text style={styles.tagTextLime}>{workoutsData[0].level}</Text>
+              </BlurView>
+              <BlurView intensity={20} style={styles.tagBlur}>
+                <Text style={styles.tagTextWhite}>{workoutsData[0].duration}</Text>
+              </BlurView>
+            </View>
+            <Text style={styles.heroTitle}>{workoutsData[0].title}</Text>
+            <Text style={styles.heroSubtitle}>{workoutsData[0].subtitle}</Text>
+
+            <TouchableOpacity style={styles.startButton} onPress={() => handleWorkoutClick(workoutsData[0])}>
+              <Play size={18} color={colors.slate950} fill={colors.slate900} />
+              <Text style={styles.startButtonText}>Começar Agora</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+
+        {/* New Section: Your Routine */}
+        <View style={styles.horizontalSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Sua Rotina</Text>
+            <ArrowRight size={18} color={colors.slate500} />
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
+            {workoutsData.slice(1).map((workout) => (
+              <TouchableOpacity
+                key={workout.id}
+                onPress={() => handleWorkoutClick(workout)}
+                style={styles.routineCard}
+                activeOpacity={0.8}
+              >
+                <View style={styles.routineImageContainer}>
+                  <Image source={{ uri: workout.image }} style={styles.routineImage} />
+                  <View style={styles.routineImageOverlay} />
+                </View>
+                <Text style={styles.routineTitle} numberOfLines={1}>{workout.title}</Text>
+                <Text style={styles.routineSubtitle} numberOfLines={1}>{workout.subtitle}</Text>
+                <View style={styles.routineMeta}>
+                  <Clock size={10} color={colors.lime400} />
+                  <Text style={styles.routineDuration}>{workout.duration}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <View style={{ width: 24 }} />
+          </ScrollView>
+        </View>
+      </ScrollView>
+      );
+
+  const WorkoutsScreen = () => (
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
+        <Text style={styles.screenTitle}>Treinos</Text>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+          {workoutsData.map((workout) => (
             <TouchableOpacity
               key={workout.id}
               onPress={() => handleWorkoutClick(workout)}
-              style={styles.routineCard}
-              activeOpacity={0.8}
+              style={[styles.heroCard, { height: 200, marginBottom: 20 }]}
             >
-              <View style={styles.routineImageContainer}>
-                <Image source={{ uri: workout.image }} style={styles.routineImage} />
-                <View style={styles.routineImageOverlay} />
-              </View>
-              <Text style={styles.routineTitle} numberOfLines={1}>{workout.title}</Text>
-              <Text style={styles.routineSubtitle} numberOfLines={1}>{workout.subtitle}</Text>
-              <View style={styles.routineMeta}>
-                <Clock size={10} color={colors.lime400} />
-                <Text style={styles.routineDuration}>{workout.duration}</Text>
+              <Image source={{ uri: workout.image }} style={styles.heroImage} />
+              <LinearGradient colors={['transparent', '#020617']} style={styles.heroGradient} />
+              <View style={styles.heroContent}>
+                <Text style={styles.heroTitle}>{workout.title}</Text>
+                <Text style={styles.heroSubtitle}>{workout.subtitle}</Text>
               </View>
             </TouchableOpacity>
           ))}
-          <View style={{ width: 24 }} />
         </ScrollView>
       </View>
-    </ScrollView>
-  );
-
-  const WorkoutsScreen = () => (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
-      <Text style={styles.screenTitle}>Treinos</Text>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-        {workoutsData.map((workout) => (
-          <TouchableOpacity
-            key={workout.id}
-            onPress={() => handleWorkoutClick(workout)}
-            style={[styles.heroCard, { height: 200, marginBottom: 20 }]}
-          >
-            <Image source={{ uri: workout.image }} style={styles.heroImage} />
-            <LinearGradient colors={['transparent', '#020617']} style={styles.heroGradient} />
-            <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>{workout.title}</Text>
-              <Text style={styles.heroSubtitle}>{workout.subtitle}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
+      );
 
   const StatsScreen = () => {
     const [filter, setFilter] = useState('weekly'); // 'weekly', 'monthly', 'all'
 
-    // Mock Data for Graphs (in real app, aggregate from workoutHistory/dailyStats)
-    const weightData = {
-      labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
-      datasets: [{ data: [78, 77, 76.5, 75, 74.2, 73] }]
+      // Mock Data for Graphs (in real app, aggregate from workoutHistory/dailyStats)
+      const weightData = {
+        labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
+      datasets: [{data: [78, 77, 76.5, 75, 74.2, 73] }]
     };
 
-    const caloriesData = {
-      labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"],
-      datasets: [{ data: [2100, 2300, 1950, 2200, 2400, 1800, 2000] }]
+      const caloriesData = {
+        labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"],
+      datasets: [{data: [2100, 2300, 1950, 2200, 2400, 1800, 2000] }]
     };
 
-    const screenWidth = Dimensions.get("window").width;
+      const screenWidth = Dimensions.get("window").width;
 
-    const chartConfig = {
-      backgroundGradientFrom: "#1e293b",
+      const chartConfig = {
+        backgroundGradientFrom: "#1e293b",
       backgroundGradientFromOpacity: 0.5,
       backgroundGradientTo: "#0f172a",
       backgroundGradientToOpacity: 0.8,
@@ -476,7 +678,7 @@ const GlassFitnessApp = () => {
       labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
     };
 
-    return (
+      return (
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <Text style={styles.screenTitle}>Estatísticas</Text>
@@ -573,40 +775,40 @@ const GlassFitnessApp = () => {
 
         </ScrollView>
       </View>
-    );
+      );
   };
 
   const SettingsScreen = () => {
     const [localGoals, setLocalGoals] = useState(userPreferences.goals);
-    const [localSchedule, setLocalSchedule] = useState(userPreferences.schedule);
+      const [localSchedule, setLocalSchedule] = useState(userPreferences.schedule);
 
-    // Days of week map
-    const days = [
-      { id: 'monday', label: 'Segunda-feira' },
-      { id: 'tuesday', label: 'Terça-feira' },
-      { id: 'wednesday', label: 'Quarta-feira' },
-      { id: 'thursday', label: 'Quinta-feira' },
-      { id: 'friday', label: 'Sexta-feira' },
-      { id: 'saturday', label: 'Sábado' },
-      { id: 'sunday', label: 'Domingo' }
-    ];
+      // Days of week map
+      const days = [
+      {id: 'monday', label: 'Segunda-feira' },
+      {id: 'tuesday', label: 'Terça-feira' },
+      {id: 'wednesday', label: 'Quarta-feira' },
+      {id: 'thursday', label: 'Quinta-feira' },
+      {id: 'friday', label: 'Sexta-feira' },
+      {id: 'saturday', label: 'Sábado' },
+      {id: 'sunday', label: 'Domingo' }
+      ];
 
-    // Workouts themes options
-    const workoutOptions = [
-      { label: 'Descanso', value: 'rest' },
-      { label: 'Peito & Tríceps', value: 'chest-triceps' },
-      { label: 'Costas & Bíceps', value: 'back-biceps' },
-      { label: 'Pernas', value: 'legs' },
-      { label: 'Ombros & Abdômen', value: 'shoulders-abs' },
-      { label: 'Flow (Full Body)', value: 'flow' },
-    ];
+      // Workouts themes options
+      const workoutOptions = [
+      {label: 'Descanso', value: 'rest' },
+      {label: 'Peito & Tríceps', value: 'chest-triceps' },
+      {label: 'Costas & Bíceps', value: 'back-biceps' },
+      {label: 'Pernas', value: 'legs' },
+      {label: 'Ombros & Abdômen', value: 'shoulders-abs' },
+      {label: 'Flow (Full Body)', value: 'flow' },
+      ];
 
     const handleSave = async () => {
-      await updatePreferences({ goals: localGoals, schedule: localSchedule });
+        await updatePreferences({ goals: localGoals, schedule: localSchedule });
       handleTabPress('profile'); // Go back
     };
 
-    return (
+      return (
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
           <TouchableOpacity onPress={() => handleTabPress('profile')}>
@@ -718,200 +920,310 @@ const GlassFitnessApp = () => {
           </TouchableOpacity>
         </ScrollView>
       </View>
-    );
+      );
   };
 
-  const ProfileScreen = () => (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
-      {/* ... keeping ProfileScreen as is mostly ... */}
-      <Text style={[styles.screenTitle, { marginBottom: 30 }]}>Perfil</Text>
+      // --- EDIT PROFILE MODAL ---
+      const EditProfileModal = ({visible, onClose, initialName, initialAvatar, onSave}: any) => {
+    const [name, setName] = useState(initialName || '');
+      const [avatar, setAvatar] = useState(initialAvatar || null);
+      const [loading, setLoading] = useState(false);
 
-      <View style={{ alignItems: 'center', marginBottom: 40 }}>
-        <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: colors.slate800, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.lime400, marginBottom: 16, overflow: 'hidden' }}>
-          {currentUser?.avatar_uri ? (
-            <Image source={{ uri: currentUser.avatar_uri }} style={{ width: 100, height: 100 }} />
-          ) : (
-            <User size={40} color={colors.lime400} />
-          )}
-        </View>
-        <Text style={styles.userNameText}>{userName}</Text>
-        <Text style={{ color: colors.slate400 }}>Membro Pro</Text>
-        {/* Live Goal Display */}
-        <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: colors.white, fontWeight: 'bold' }}>{userPreferences.goals.weight}kg</Text>
-            <Text style={{ color: colors.slate500, fontSize: 10 }}>Meta</Text>
+    useEffect(() => {
+      if (visible) {
+        setName(initialName || '');
+      setAvatar(initialAvatar || null);
+      }
+    }, [visible, initialName, initialAvatar]);
+
+    const pickImage = async () => {
+      // We can dynamically import inside or just rely on the import at top
+      // Assuming expo-image-picker is available based on previous context
+      // Note: In a real single-file structure, imports should be at top. 
+      // Ideally we used the import I requested checks for earlier. 
+      // I will use a simple logic assuming ImagePicker is imported or use a pseudo-implementation if not.
+      // Wait, I haven't added `import * as ImagePicker` to GlassFitnessApp.tsx yet! 
+      // I must ensure it is imported. I will add the import in a separate step or assume it works for this snippet
+      // if I add it afterwards. To be safe, I'll add the import in the next step.
+      try {
+        // @ts-ignore
+        const result = await import('expo-image-picker').then(ImagePicker => ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+        }));
+
+      if (!result.canceled) {
+        setAvatar(result.assets[0].uri);
+        }
+      } catch (e) {
+        console.log("Error picking image", e);
+      }
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+      await onSave(name, avatar);
+      setLoading(false);
+      onClose();
+    };
+
+      if (!visible) return null;
+
+      return (
+      <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+        <BlurView intensity={50} tint="dark" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: colors.slate800, borderRadius: 24, padding: 24, borderWidth: 1, borderColor: colors.slate700 }}>
+            <Text style={{ color: colors.white, fontSize: 20, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' }}>Editar Perfil</Text>
+
+            <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center', marginBottom: 24 }}>
+              <View style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 2, borderColor: colors.lime400, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.slate700 }}>
+                {avatar ? <Image source={{ uri: avatar }} style={{ width: '100%', height: '100%' }} /> : <User size={40} color={colors.slate400} />}
+              </View>
+              <View style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: colors.lime400, padding: 6, borderRadius: 20 }}>
+                <Edit2 size={16} color={colors.slate900} />
+              </View>
+            </TouchableOpacity>
+
+            <Text style={{ color: colors.slate400, marginBottom: 8 }}>Seu Nome</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={{ backgroundColor: colors.slate900, color: colors.white, padding: 16, borderRadius: 12, marginBottom: 24, fontSize: 16 }}
+              placeholder="Digite seu nome"
+              placeholderTextColor={colors.slate600}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity onPress={onClose} style={{ flex: 1, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: colors.slate600, alignItems: 'center' }}>
+                <Text style={{ color: colors.white, fontWeight: 'bold' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSave} style={{ flex: 1, padding: 16, borderRadius: 12, backgroundColor: colors.lime400, alignItems: 'center' }}>
+                <Text style={{ color: colors.slate900, fontWeight: 'bold' }}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={{ width: 1, height: 24, backgroundColor: colors.slate700 }} />
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: colors.white, fontWeight: 'bold' }}>{userPreferences.goals.kcal}</Text>
-            <Text style={{ color: colors.slate500, fontSize: 10 }}>Kcal</Text>
+        </BlurView>
+      </Modal>
+      );
+  };
+
+  const ProfileScreen = () => {
+    // Logic for Edit Modal
+    const [isEditModalVisible, setEditModalVisible] = useState(false);
+      const {updateUser, currentUser} = useUser();
+
+    const handleUpdateProfile = async (newName: string, newAvatar: string) => {
+      if (currentUser) {
+        await updateUser(currentUser.id, newName, newAvatar);
+      }
+    };
+
+      return (
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+          <Text style={styles.screenTitle}>Perfil</Text>
+          <TouchableOpacity onPress={() => setEditModalVisible(true)} style={{ padding: 8, backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 12 }}>
+            <Edit2 size={20} color={colors.lime400} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ alignItems: 'center', marginBottom: 40 }}>
+          <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: colors.slate800, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.lime400, marginBottom: 16, overflow: 'hidden' }}>
+            {currentUser?.avatar_uri ? (
+              <Image source={{ uri: currentUser.avatar_uri }} style={{ width: 100, height: 100 }} />
+            ) : (
+              <User size={40} color={colors.lime400} />
+            )}
           </View>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentScreen('settings')}>
-        <Settings size={20} color={colors.white} />
-        <Text style={styles.menuItemText}>Configurações</Text>
-        <ArrowRight size={16} color={colors.slate600} style={{ marginLeft: 'auto' }} />
-      </TouchableOpacity>
-
-      {/* ... history and logout ... */}
-      <TouchableOpacity style={styles.menuItem}>
-        <Activity size={20} color={colors.white} />
-        <Text style={styles.menuItemText}>Histórico</Text>
-        <ArrowRight size={16} color={colors.slate600} style={{ marginLeft: 'auto' }} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.menuItem, { marginTop: 40, borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}
-        onPress={handleLogout}
-      >
-        <LogOut size={20} color={colors.red500} />
-        <Text style={[styles.menuItemText, { color: colors.red500 }]}>Sair da Conta</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const DetailsScreen = () => (
-    <View style={styles.detailsContainer}>
-      {/* Top Image Hero */}
-      <View style={styles.detailsHero}>
-        <Image
-          source={{ uri: activeWorkout.image }}
-          style={styles.detailsHeroImage}
-        />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'transparent', colors.slate950]}
-          style={styles.detailsGradient}
-        />
-
-        {/* Navbar absolute */}
-        <View style={[styles.detailsNav, { paddingTop: insets.top + 10 }]}>
-          <TouchableOpacity
-            onPress={() => setCurrentScreen('home')}
-            style={styles.detailsNavButton}
-          >
-            <ChevronLeft size={24} color={colors.white} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.detailsNavButton}>
-            <MoreHorizontal size={24} color={colors.white} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Floating Stats */}
-        <View style={styles.floatingStatsContainer}>
-          <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
-            <Text style={styles.floatingStatValueLime}>{activeWorkout.duration}</Text>
-            <Text style={styles.floatingStatLabel}>DURAÇÃO</Text>
-          </BlurView>
-          <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
-            <Text style={styles.floatingStatValueOrange}>{activeWorkout.calories}</Text>
-            <Text style={styles.floatingStatLabel}>QUEIMA</Text>
-          </BlurView>
-          <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
-            <Text style={styles.floatingStatValueBlue}>{activeWorkout.exercises.length}</Text>
-            <Text style={styles.floatingStatLabel}>SÉRIES</Text>
-          </BlurView>
-        </View>
-      </View>
-
-      {/* Content Sheet */}
-      <View style={styles.contentSheet}>
-        {/* Pull Indicator */}
-        <View style={styles.pullIndicator} />
-
-        <View style={styles.sheetHeader}>
-          <View>
-            <Text style={styles.sheetTitle}>{activeWorkout.title}</Text>
-            <View style={styles.sheetMetaRow}>
-              <Calendar size={14} color={colors.slate400} />
-              <Text style={styles.sheetMetaText}>Hoje</Text>
-              <View style={styles.dot} />
-              <Text style={styles.sheetMetaLevel}>{activeWorkout.level}</Text>
+          <Text style={styles.userNameText}>{currentUser?.name || "Visitante"}</Text>
+          <Text style={{ color: colors.slate400 }}>Membro Pro</Text>
+          {/* Live Goal Display */}
+          <View style={{ flexDirection: 'row', gap: 16, marginTop: 16 }}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: colors.white, fontWeight: 'bold' }}>{userPreferences.goals.weight}kg</Text>
+              <Text style={{ color: colors.slate500, fontSize: 10 }}>Meta</Text>
+            </View>
+            <View style={{ width: 1, height: 24, backgroundColor: colors.slate700 }} />
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: colors.white, fontWeight: 'bold' }}>{userPreferences.goals.kcal}</Text>
+              <Text style={{ color: colors.slate500, fontSize: 10 }}>Kcal</Text>
             </View>
           </View>
         </View>
 
-        {/* Exercises List */}
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
+        <TouchableOpacity style={styles.menuItem} onPress={() => setCurrentScreen('settings')}>
+          <Settings size={20} color={colors.white} />
+          <Text style={styles.menuItemText}>Configurações</Text>
+          <ArrowRight size={16} color={colors.slate600} style={{ marginLeft: 'auto' }} />
+        </TouchableOpacity>
+
+        {/* ... history and logout ... */}
+        <TouchableOpacity style={styles.menuItem}>
+          <Activity size={20} color={colors.white} />
+          <Text style={styles.menuItemText}>Histórico</Text>
+          <ArrowRight size={16} color={colors.slate600} style={{ marginLeft: 'auto' }} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuItem, { marginTop: 40, borderColor: 'rgba(239, 68, 68, 0.2)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}
+          onPress={handleLogout}
         >
-          <Text style={styles.exercisesTitle}>EXERCÍCIOS ({activeWorkout.exercises.length})</Text>
+          <LogOut size={20} color={colors.red500} />
+          <Text style={[styles.menuItemText, { color: colors.red500 }]}>Sair da Conta</Text>
+        </TouchableOpacity>
 
-          {activeWorkout.exercises.map((exercise, index) => (
-            <TouchableOpacity key={exercise.id} style={styles.exerciseCard}>
-              {/* Image Placeholder */}
-              <View style={styles.exerciseImageContainer}>
-                <Image
-                  source={{ uri: `https://images.unsplash.com/photo-${index % 2 === 0 ? '1534438327276-14e5300c3a48' : '1583454110551-21f2fa2afe61'}?auto=format&fit=crop&w=100&h=100` }}
-                  style={styles.exerciseImage}
-                />
-                <View style={styles.exerciseOverlay} />
-                {exercise.completed && (
-                  <View style={styles.completedOverlay}>
-                    <CheckCircle2 size={24} color={colors.white} />
-                  </View>
-                )}
-              </View>
+        <EditProfileModal
+          visible={isEditModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          initialName={currentUser?.name}
+          initialAvatar={currentUser?.avatar_uri}
+          onSave={handleUpdateProfile}
+        />
+      </View>
+      );
+  };
 
-              <View style={styles.exerciseInfo}>
-                <Text style={[
-                  styles.exerciseName,
-                  exercise.completed && styles.completedText
-                ]}>
-                  {exercise.name}
-                </Text>
-                <View style={styles.exerciseStats}>
-                  <View style={styles.exerciseTag}>
-                    <Text style={styles.exerciseTagText}>{exercise.sets}</Text>
-                  </View>
-                  <Text style={styles.exerciseReps}>{exercise.reps}</Text>
-                </View>
-              </View>
+  const DetailsScreen = () => (
+      <View style={styles.detailsContainer}>
+        {/* Top Image Hero */}
+        <View style={styles.detailsHero}>
+          <Image
+            source={{ uri: activeWorkout.image }}
+            style={styles.detailsHeroImage}
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.3)', 'transparent', colors.slate950]}
+            style={styles.detailsGradient}
+          />
 
-              <View style={styles.playButtonSmall}>
-                <Play size={14} color={colors.slate400} fill={colors.slate400} />
-              </View>
+          {/* Navbar absolute */}
+          <View style={[styles.detailsNav, { paddingTop: insets.top + 10 }]}>
+            <TouchableOpacity
+              onPress={() => setCurrentScreen('home')}
+              style={styles.detailsNavButton}
+            >
+              <ChevronLeft size={24} color={colors.white} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            <TouchableOpacity style={styles.detailsNavButton}>
+              <MoreHorizontal size={24} color={colors.white} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Sticky CTA */}
-        <View style={[styles.stickyCTA, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-          <TouchableOpacity style={styles.mainButton}>
-            <Play size={20} color={colors.slate900} fill={colors.slate900} />
-            <Text style={styles.mainButtonText}>INICIAR TREINO</Text>
-          </TouchableOpacity>
+          {/* Floating Stats */}
+          <View style={styles.floatingStatsContainer}>
+            <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
+              <Text style={styles.floatingStatValueLime}>{activeWorkout.duration}</Text>
+              <Text style={styles.floatingStatLabel}>DURAÇÃO</Text>
+            </BlurView>
+            <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
+              <Text style={styles.floatingStatValueOrange}>{activeWorkout.calories}</Text>
+              <Text style={styles.floatingStatLabel}>QUEIMA</Text>
+            </BlurView>
+            <BlurView intensity={30} tint="dark" style={styles.floatingStat}>
+              <Text style={styles.floatingStatValueBlue}>{activeWorkout.exercises.length}</Text>
+              <Text style={styles.floatingStatLabel}>SÉRIES</Text>
+            </BlurView>
+          </View>
+        </View>
+
+        {/* Content Sheet */}
+        <View style={styles.contentSheet}>
+          {/* Pull Indicator */}
+          <View style={styles.pullIndicator} />
+
+          <View style={styles.sheetHeader}>
+            <View>
+              <Text style={styles.sheetTitle}>{activeWorkout.title}</Text>
+              <View style={styles.sheetMetaRow}>
+                <Calendar size={14} color={colors.slate400} />
+                <Text style={styles.sheetMetaText}>Hoje</Text>
+                <View style={styles.dot} />
+                <Text style={styles.sheetMetaLevel}>{activeWorkout.level}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Exercises List */}
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.exercisesTitle}>EXERCÍCIOS ({activeWorkout.exercises.length})</Text>
+
+            {activeWorkout.exercises.map((exercise, index) => (
+              <TouchableOpacity key={exercise.id} style={styles.exerciseCard}>
+                {/* Image Placeholder */}
+                <View style={styles.exerciseImageContainer}>
+                  <Image
+                    source={{ uri: `https://images.unsplash.com/photo-${index % 2 === 0 ? '1534438327276-14e5300c3a48' : '1583454110551-21f2fa2afe61'}?auto=format&fit=crop&w=100&h=100` }}
+                    style={styles.exerciseImage}
+                  />
+                  <View style={styles.exerciseOverlay} />
+                  {exercise.completed && (
+                    <View style={styles.completedOverlay}>
+                      <CheckCircle2 size={24} color={colors.white} />
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.exerciseInfo}>
+                  <Text style={[
+                    styles.exerciseName,
+                    exercise.completed && styles.completedText
+                  ]}>
+                    {exercise.name}
+                  </Text>
+                  <View style={styles.exerciseStats}>
+                    <View style={styles.exerciseTag}>
+                      <Text style={styles.exerciseTagText}>{exercise.sets}</Text>
+                    </View>
+                    <Text style={styles.exerciseReps}>{exercise.reps}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.playButtonSmall}>
+                  <Play size={14} color={colors.slate400} fill={colors.slate400} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Sticky CTA */}
+          <View style={[styles.stickyCTA, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+            <TouchableOpacity style={styles.mainButton}>
+              <Play size={20} color={colors.slate900} fill={colors.slate900} />
+              <Text style={styles.mainButtonText}>INICIAR TREINO</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  );
+      );
 
-  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
-  const [logWorkoutId, setLogWorkoutId] = useState('chest-triceps'); // Default
-  const [logExercises, setLogExercises] = useState<any[]>([]);
+      const [showWorkoutModal, setShowWorkoutModal] = useState(false);
+      const [logWorkoutId, setLogWorkoutId] = useState('chest-triceps'); // Default
+      const [logExercises, setLogExercises] = useState<any[]>([]);
 
   // Initialize exercises when workout type changes in modal
   useEffect(() => {
     const template = workoutsData.find(w => w.id === logWorkoutId);
-    if (template) {
-      setLogExercises(template.exercises.map(e => ({
-        ...e,
-        weight: 0, // ensure weight field exists
-        actualSets: 0,
-        actualReps: 0
-      })));
+      if (template) {
+        setLogExercises(template.exercises.map(e => ({
+          ...e,
+          weight: 0, // ensure weight field exists
+          actualSets: 0,
+          actualReps: 0
+        })));
     }
   }, [logWorkoutId]);
 
   const handleFinishWorkout = async () => {
     const template = workoutsData.find(w => w.id === logWorkoutId);
-    if (!template) return;
+      if (!template) return;
 
-    const session = {
-      id: Date.now().toString(),
+      const session = {
+        id: Date.now().toString(),
       date: new Date().toISOString(),
       workoutId: logWorkoutId,
       workoutTitle: template.title,
@@ -919,885 +1231,1036 @@ const GlassFitnessApp = () => {
       calories: parseInt(template.calories) || 400,
       exercises: logExercises.map(e => ({
         id: e.id,
-        name: e.name,
-        sets: e.actualSets || 3, // Default if not filled
-        reps: e.actualReps || '12',
-        weight: e.weight || 0,
-        completed: true
+      name: e.name,
+      sets: e.actualSets || 3, // Default if not filled
+      reps: e.actualReps || '12',
+      weight: e.weight || 0,
+      completed: true
       }))
     };
 
-    await addWorkoutSession(session);
+      await addWorkoutSession(session);
 
-    // Update daily stats for calories (naive addition)
-    // @ts-ignore
-    if (updatePreferences) {
-      // Actually we need updateDailyStats
-      // But wait, updateDailyStats is available
-    }
+      // Update daily stats for calories (naive addition)
+      // @ts-ignore
+      if (updatePreferences) {
+        // Actually we need updateDailyStats
+        // But wait, updateDailyStats is available
+      }
     // We should update daily stats calories?
-    // Let's assume the daily stats calorie is CONSUMED (Food). Burned is different.
-    // Usually apps track CONSUMED vs BURNED. 
-    // The dashboard 'Kcal' usually means Consumed / Goal Consumed.
-    // Burned is usually separate. 
-    // For now let's just save the session.
+      // Let's assume the daily stats calorie is CONSUMED (Food). Burned is different.
+      // Usually apps track CONSUMED vs BURNED. 
+      // The dashboard 'Kcal' usually means Consumed / Goal Consumed.
+      // Burned is usually separate. 
+      // For now let's just save the session.
 
-    setShowWorkoutModal(false);
-    setCurrentScreen('home'); // Go home to see it? Or History?
+      setShowWorkoutModal(false);
+      setCurrentScreen('home'); // Go home to see it? Or History?
   };
 
 
   const WorkoutLogModal = () => (
-    <Modal
-      visible={showWorkoutModal}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setShowWorkoutModal(false)}
-    >
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-        <View style={{ flex: 1, backgroundColor: colors.slate950, marginTop: 40, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' }}>
-          <View style={{ padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.slate900 }}>
-            <Text style={{ color: colors.white, fontSize: 20, fontWeight: 'bold' }}>Registrar Treino</Text>
-            <TouchableOpacity onPress={() => setShowWorkoutModal(false)}>
-              <X size={24} color={colors.slate400} />
-            </TouchableOpacity>
-          </View>
+      <Modal
+        visible={showWorkoutModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowWorkoutModal(false)}
+      >
+        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
+          <View style={{ flex: 1, backgroundColor: colors.slate950, marginTop: 40, borderTopLeftRadius: 32, borderTopRightRadius: 32, overflow: 'hidden' }}>
+            <View style={{ padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.slate900 }}>
+              <Text style={{ color: colors.white, fontSize: 20, fontWeight: 'bold' }}>Registrar Treino</Text>
+              <TouchableOpacity onPress={() => setShowWorkoutModal(false)}>
+                <X size={24} color={colors.slate400} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
-            {/* Date - For now assume Today */}
-            <Text style={{ color: colors.slate400, marginBottom: 8 }}>Data: <Text style={{ color: colors.white }}>Hoje</Text></Text>
+            <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 100 }}>
+              {/* Date - For now assume Today */}
+              <Text style={{ color: colors.slate400, marginBottom: 8 }}>Data: <Text style={{ color: colors.white }}>Hoje</Text></Text>
 
-            {/* Workout Selector */}
-            <Text style={{ color: colors.lime400, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Treino Realizado</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                {workoutsData.filter(w => w.id !== 'flow').map(opt => (
-                  <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setLogWorkoutId(opt.id)}
-                    style={{
-                      paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12,
-                      backgroundColor: logWorkoutId === opt.id ? colors.lime500 : colors.slate800,
-                      borderWidth: 1, borderColor: logWorkoutId === opt.id ? colors.lime400 : colors.slate700
-                    }}
-                  >
-                    <Text style={{
-                      color: logWorkoutId === opt.id ? colors.slate950 : colors.slate300,
-                      fontWeight: 'bold'
-                    }}>
-                      {opt.title}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-
-            {/* Exercises */}
-            <Text style={{ color: colors.lime400, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Exercícios & Cargas</Text>
-
-            {logExercises.map((ex, idx) => (
-              <View key={ex.id} style={{ marginBottom: 16, backgroundColor: colors.slate800, padding: 16, borderRadius: 16 }}>
-                <Text style={{ color: colors.white, fontWeight: 'bold', marginBottom: 12 }}>{ex.name}</Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>SÉRIES</Text>
-                    <TextInput
-                      keyboardType='numeric'
-                      placeholderTextColor={colors.slate600}
-                      placeholder={ex.sets.toString().split(' ')[0]} // extract "4" from "4 series"
-                      style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
-                      onChangeText={t => {
-                        const newExs = [...logExercises];
-                        newExs[idx].actualSets = parseInt(t);
-                        setLogExercises(newExs);
+              {/* Workout Selector */}
+              <Text style={{ color: colors.lime400, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Treino Realizado</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {workoutsData.filter(w => w.id !== 'flow').map(opt => (
+                    <TouchableOpacity
+                      key={opt.id}
+                      onPress={() => setLogWorkoutId(opt.id)}
+                      style={{
+                        paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12,
+                        backgroundColor: logWorkoutId === opt.id ? colors.lime500 : colors.slate800,
+                        borderWidth: 1, borderColor: logWorkoutId === opt.id ? colors.lime400 : colors.slate700
                       }}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>REPS</Text>
-                    <TextInput
-                      keyboardType='numeric'
-                      placeholderTextColor={colors.slate600}
-                      placeholder="12"
-                      style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
-                      onChangeText={t => {
-                        const newExs = [...logExercises];
-                        newExs[idx].actualReps = t;
-                        setLogExercises(newExs);
-                      }}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>KG</Text>
-                    <TextInput
-                      keyboardType='numeric'
-                      placeholderTextColor={colors.slate600}
-                      placeholder="0"
-                      style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
-                      onChangeText={t => {
-                        const newExs = [...logExercises];
-                        newExs[idx].weight = parseInt(t);
-                        setLogExercises(newExs);
-                      }}
-                    />
+                    >
+                      <Text style={{
+                        color: logWorkoutId === opt.id ? colors.slate950 : colors.slate300,
+                        fontWeight: 'bold'
+                      }}>
+                        {opt.title}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {/* Exercises */}
+              <Text style={{ color: colors.lime400, fontWeight: 'bold', marginBottom: 12, textTransform: 'uppercase' }}>Exercícios & Cargas</Text>
+
+              {logExercises.map((ex, idx) => (
+                <View key={ex.id} style={{ marginBottom: 16, backgroundColor: colors.slate800, padding: 16, borderRadius: 16 }}>
+                  <Text style={{ color: colors.white, fontWeight: 'bold', marginBottom: 12 }}>{ex.name}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>SÉRIES</Text>
+                      <TextInput
+                        keyboardType='numeric'
+                        placeholderTextColor={colors.slate600}
+                        placeholder={ex.sets.toString().split(' ')[0]} // extract "4" from "4 series"
+                        style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
+                        onChangeText={t => {
+                          const newExs = [...logExercises];
+                          newExs[idx].actualSets = parseInt(t);
+                          setLogExercises(newExs);
+                        }}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>REPS</Text>
+                      <TextInput
+                        keyboardType='numeric'
+                        placeholderTextColor={colors.slate600}
+                        placeholder="12"
+                        style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
+                        onChangeText={t => {
+                          const newExs = [...logExercises];
+                          newExs[idx].actualReps = t;
+                          setLogExercises(newExs);
+                        }}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.slate500, fontSize: 10, marginBottom: 4 }}>KG</Text>
+                      <TextInput
+                        keyboardType='numeric'
+                        placeholderTextColor={colors.slate600}
+                        placeholder="0"
+                        style={{ backgroundColor: colors.slate900, color: colors.white, padding: 12, borderRadius: 8 }}
+                        onChangeText={t => {
+                          const newExs = [...logExercises];
+                          newExs[idx].weight = parseInt(t);
+                          setLogExercises(newExs);
+                        }}
+                      />
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
+              ))}
 
-            <TouchableOpacity
-              onPress={handleFinishWorkout}
-              style={{
-                backgroundColor: colors.lime400, paddingVertical: 16, borderRadius: 16,
-                alignItems: 'center', marginTop: 16, marginBottom: 50,
-                flexDirection: 'row', justifyContent: 'center', gap: 8
-              }}
-            >
-              <Check size={20} color={colors.slate950} />
-              <Text style={{ color: colors.slate950, fontWeight: 'bold', fontSize: 16 }}>Finalizar Treino</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleFinishWorkout}
+                style={{
+                  backgroundColor: colors.lime400, paddingVertical: 16, borderRadius: 16,
+                  alignItems: 'center', marginTop: 16, marginBottom: 50,
+                  flexDirection: 'row', justifyContent: 'center', gap: 8
+                }}
+              >
+                <Check size={20} color={colors.slate950} />
+                <Text style={{ color: colors.slate950, fontWeight: 'bold', fontSize: 16 }}>Finalizar Treino</Text>
+              </TouchableOpacity>
 
-          </ScrollView>
-        </View>
-      </BlurView>
-    </Modal>
-  );
+            </ScrollView>
+          </View>
+        </BlurView>
+      </Modal>
+      );
 
   // --- Bottom Nav Component ---
 
   const BottomNav = () => (
-    <BlurView intensity={95} tint="dark" style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(2, 6, 23, 0.6)' }]}>
-      <View style={styles.bottomNavContent}>
-        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('home')}>
-          <Home size={24} color={activeTab === 'home' ? colors.lime400 : colors.slate400} />
-          <Text style={[styles.navText, activeTab === 'home' && { color: colors.lime400 }]}>Início</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('workouts')}>
-          <Activity size={24} color={activeTab === 'workouts' ? colors.lime400 : colors.slate400} />
-          <Text style={[styles.navText, activeTab === 'workouts' && { color: colors.lime400 }]}>Treinos</Text>
-        </TouchableOpacity>
+      <BlurView intensity={95} tint="dark" style={[styles.bottomNav, { paddingBottom: Math.max(insets.bottom, 20), backgroundColor: 'rgba(2, 6, 23, 0.6)' }]}>
+        <View style={styles.bottomNavContent}>
+          <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('home')}>
+            <Home size={24} color={activeTab === 'home' ? colors.lime400 : colors.slate400} />
+            <Text style={[styles.navText, activeTab === 'home' && { color: colors.lime400 }]}>Início</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('workouts')}>
+            <Activity size={24} color={activeTab === 'workouts' ? colors.lime400 : colors.slate400} />
+            <Text style={[styles.navText, activeTab === 'workouts' && { color: colors.lime400 }]}>Treinos</Text>
+          </TouchableOpacity>
 
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab} onPress={() => setShowWorkoutModal(true)}>
-            <Dumbbell size={28} color={colors.slate900} fill={colors.slate900} />
+          <View style={styles.fabContainer}>
+            <TouchableOpacity style={styles.fab} onPress={() => setShowWorkoutModal(true)}>
+              <Dumbbell size={28} color={colors.slate900} fill={colors.slate900} />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('stats')}>
+            <BarChart2 size={24} color={activeTab === 'stats' ? colors.lime400 : colors.slate400} />
+            <Text style={[styles.navText, activeTab === 'stats' && { color: colors.lime400 }]}>Estatísticas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('nutrition')}>
+            <Utensils size={24} color={activeTab === 'nutrition' ? colors.lime400 : colors.slate400} />
+            <Text style={[styles.navText, activeTab === 'nutrition' && { color: colors.lime400 }]}>Dieta</Text>
+          </TouchableOpacity>
+        </View>
+      </BlurView>
+      );
+
+      return (
+      <View style={styles.mainContainer}>
+        <RNStatusBar barStyle="light-content" backgroundColor={colors.slate950} />
+
+        {/* Background Ambient Glows */}
+        {/* Background Ambient Glows - Replaced with SVG for better diffusion */}
+        <View style={styles.glowContainer} pointerEvents="none">
+          {/* Top Left Green Glow */}
+          <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+            <Defs>
+              <RadialGradient
+                id="grad1"
+                cx="0%"
+                cy="0%"
+                rx="50%"
+                ry="50%"
+                fx="0%"
+                fy="0%"
+                gradientUnits="userSpaceOnUse"
+              >
+                <Stop offset="0%" stopColor="#84cc16" stopOpacity="0.15" />
+                <Stop offset="100%" stopColor="#020617" stopOpacity="0" />
+              </RadialGradient>
+              <RadialGradient
+                id="grad2"
+                cx="100%"
+                cy="100%"
+                rx="50%"
+                ry="50%"
+                fx="100%"
+                fy="100%"
+                gradientUnits="userSpaceOnUse"
+              >
+                <Stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                <Stop offset="100%" stopColor="#020617" stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad1)" />
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad2)" />
+          </Svg>
+        </View>
+
+        {/* Main Content Area */}
+        <View style={styles.contentLayer}>
+          {loading ? (
+            <View style={{ flex: 1, backgroundColor: colors.slate950 }} />
+          ) : (!users || users.length === 0) ? (
+            <OnboardingScreen />
+          ) : (!currentUser || currentScreen === 'login') ? (
+            <LoginScreen />
+          ) : currentScreen === 'details' ? (
+            <DetailsScreen />
+          ) : currentScreen === 'settings' ? (
+            <SettingsScreen />
+          ) : currentScreen === 'calendar' ? (
+            <CalendarScreen />
+          ) : (
+            <>
+              {currentScreen === 'home' && <HomeScreen />}
+              {currentScreen === 'workouts' && <WorkoutsScreen />}
+              {currentScreen === 'stats' && <StatsScreen />}
+              {currentScreen === 'stats' && <StatsScreen />}
+              {currentScreen === 'nutrition' && <NutritionScreen />}
+              {currentScreen === 'profile' && <ProfileScreen />}
+
+              <BottomNav />
+              <WorkoutLogModal />
+            </>
+          )}
+        </View>
+      </View>
+      );
+};
+
+      // --- FOOD SEARCH MODAL ---
+      const FoodSearchModal = ({visible, onClose, section, onAdd}: any) => {
+       const [query, setQuery] = useState('');
+      const [results, setResults] = useState<FoodItem[]>([]);
+      const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+      const [quantity, setQuantity] = useState('1'); // 1 unit or 100g
+
+       useEffect(() => {
+          if (query.trim().length > 0) {
+        setResults(searchFood(query));
+          } else {
+        setResults([]);
+          }
+       }, [query]);
+
+       const handleAdd = () => {
+          if (!selectedFood) return;
+      const qty = parseFloat(quantity) || 1;
+      const factor = selectedFood.unit === 'g' || selectedFood.unit === 'ml' ? (qty / selectedFood.portion) : qty; // if portion is 100g, and I ate 200g, factor is 2. If unit is 'unit', factor is qty.
+      // Wait, my DB has portion 100g. 
+      // Logic:
+      // If unit is 'g', input is grams. e.g. 150g -> 1.5 * nutrients of 100g portion? No.
+      // DB: Calories 165 per 100g. 
+      // If I eat 150g. Math: (150 / 100) * 165.
+
+      const multiplier = selectedFood.unit === 'g' || selectedFood.unit === 'ml'
+      ? (qty / selectedFood.portion)
+      : qty;
+
+      const meal: Meal = {
+        id: Date.now().toString(),
+      name: selectedFood.name,
+      calories: Math.round(selectedFood.calories * multiplier),
+      protein: Math.round(selectedFood.protein * multiplier),
+      carbs: Math.round(selectedFood.carbs * multiplier),
+      fats: Math.round(selectedFood.fats * multiplier),
+      section: section
+           };
+      onAdd(meal);
+      onClose();
+      setQuery('');
+      setSelectedFood(null);
+      setQuantity('1');
+       };
+
+      return (
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+        <BlurView intensity={40} tint="dark" style={{ flex: 1, paddingTop: 60 }}>
+          <View style={{ flex: 1, backgroundColor: colors.slate950, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <Text style={{ color: colors.white, fontSize: 20, fontWeight: 'bold' }}>Adicionar ao {section}</Text>
+              <TouchableOpacity onPress={onClose}><X size={24} color={colors.slate400} /></TouchableOpacity>
+            </View>
+
+            {/* Search Input */}
+            <View style={{ flexDirection: 'row', backgroundColor: colors.slate900, borderRadius: 12, padding: 12, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: colors.slate800 }}>
+              <TextInput
+                placeholder="Buscar alimento (ex: frango, arroz)..."
+                placeholderTextColor={colors.slate500}
+                style={{ flex: 1, color: colors.white, fontSize: 16 }}
+                value={query}
+                onChangeText={setQuery}
+                autoFocus
+              />
+            </View>
+
+            {/* Results OR Selected Food Details */}
+            {!selectedFood ? (
+              <ScrollView>
+                {results.map(food => (
+                  <TouchableOpacity key={food.id} onPress={() => { setSelectedFood(food); setQuantity(food.unit === 'g' || food.unit === 'ml' ? '100' : '1'); }} style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: colors.slate800 }}>
+                    <Text style={{ color: colors.white, fontWeight: 'bold' }}>{food.name}</Text>
+                    <Text style={{ color: colors.slate400, fontSize: 12 }}>{food.calories}kcal / {food.portion}{food.unit} • P: {food.protein}g</Text>
+                  </TouchableOpacity>
+                ))}
+                {results.length === 0 && query.length > 0 && <Text style={{ color: colors.slate500, textAlign: 'center', marginTop: 20 }}>Nenhum alimento encontrado.</Text>}
+              </ScrollView>
+            ) : (
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <TouchableOpacity onPress={() => setSelectedFood(null)} style={{ marginRight: 12 }}><ChevronLeft size={24} color={colors.white} /></TouchableOpacity>
+                  <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold' }}>{selectedFood.name}</Text>
+                </View>
+
+                <Text style={{ color: colors.slate400, marginBottom: 8 }}>Quantidade ({selectedFood.unit})</Text>
+                <TextInput
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  keyboardType="numeric"
+                  style={{ backgroundColor: colors.slate800, color: colors.white, padding: 16, borderRadius: 12, fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 }}
+                />
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 32 }}>
+                  <View style={{ alignItems: 'center' }}><Text style={{ color: colors.orange400, fontWeight: 'bold' }}>{Math.round(selectedFood.calories * (selectedFood.unit === 'g' || selectedFood.unit === 'ml' ? parseFloat(quantity) / selectedFood.portion : parseFloat(quantity)))}</Text><Text style={{ color: colors.slate500, fontSize: 10 }}>Kcal</Text></View>
+                  <View style={{ alignItems: 'center' }}><Text style={{ color: colors.red500, fontWeight: 'bold' }}>{Math.round(selectedFood.protein * (selectedFood.unit === 'g' || selectedFood.unit === 'ml' ? parseFloat(quantity) / selectedFood.portion : parseFloat(quantity)))}</Text><Text style={{ color: colors.slate500, fontSize: 10 }}>Prot</Text></View>
+                  <View style={{ alignItems: 'center' }}><Text style={{ color: colors.lime400, fontWeight: 'bold' }}>{Math.round(selectedFood.carbs * (selectedFood.unit === 'g' || selectedFood.unit === 'ml' ? parseFloat(quantity) / selectedFood.portion : parseFloat(quantity)))}</Text><Text style={{ color: colors.slate500, fontSize: 10 }}>Carb</Text></View>
+                </View>
+
+                <TouchableOpacity onPress={handleAdd} style={{ backgroundColor: colors.lime400, padding: 16, borderRadius: 16, alignItems: 'center' }}>
+                  <Text style={{ color: colors.slate900, fontWeight: 'bold', fontSize: 16 }}>Adicionar Alimento</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </BlurView>
+      </Modal>
+      );
+    };
+
+    // --- NUTRITION SCREEN (Restored) ---
+    const NutritionScreen = () => {
+      const {dailyStats, updateDailyStats, addMeal} = useUser();
+      const [searchModalVisible, setSearchModalVisible] = useState(false);
+      const [activeSection, setActiveSection] = useState('');
+
+      const addWater = (amount: number) => {
+        updateDailyStats({ waterConsumed: (dailyStats?.waterConsumed || 0) + amount });
+      };
+
+      const waterConsumed = dailyStats?.waterConsumed || 0;
+
+      const handleOpenSearch = (section: string) => {
+        setActiveSection(section);
+      setSearchModalVisible(true);
+      };
+
+      const handleAddFood = (meal: Meal) => {
+        addMeal(meal);
+      };
+
+      const renderFoodSection = (title: string, icon: any, color: string, goalCalories: number) => {
+        const sectionMeals = dailyStats.meals?.filter((m: Meal) => m.section === title) || [];
+        const sectionCals = sectionMeals.reduce((acc, curr) => acc + curr.calories, 0);
+
+      return (
+      <View style={{ marginBottom: 24 }} key={title}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {icon}
+            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{title}</Text>
+          </View>
+          <TouchableOpacity onPress={() => handleOpenSearch(title)}>
+            <PlusCircle size={20} color={colors.lime400} />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('stats')}>
-          <BarChart2 size={24} color={activeTab === 'stats' ? colors.lime400 : colors.slate400} />
-          <Text style={[styles.navText, activeTab === 'stats' && { color: colors.lime400 }]}>Estatísticas</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('nutrition')}>
-          <Utensils size={24} color={activeTab === 'nutrition' ? colors.lime400 : colors.slate400} />
-          <Text style={[styles.navText, activeTab === 'nutrition' && { color: colors.lime400 }]}>Dieta</Text>
-        </TouchableOpacity>
-      </View>
-    </BlurView>
-  );
-
-  return (
-    <View style={styles.mainContainer}>
-      <RNStatusBar barStyle="light-content" backgroundColor={colors.slate950} />
-
-      {/* Background Ambient Glows */}
-      {/* Background Ambient Glows - Replaced with SVG for better diffusion */}
-      <View style={styles.glowContainer} pointerEvents="none">
-        {/* Top Left Green Glow */}
-        <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
-          <Defs>
-            <RadialGradient
-              id="grad1"
-              cx="0%"
-              cy="0%"
-              rx="50%"
-              ry="50%"
-              fx="0%"
-              fy="0%"
-              gradientUnits="userSpaceOnUse"
-            >
-              <Stop offset="0%" stopColor="#84cc16" stopOpacity="0.15" />
-              <Stop offset="100%" stopColor="#020617" stopOpacity="0" />
-            </RadialGradient>
-            <RadialGradient
-              id="grad2"
-              cx="100%"
-              cy="100%"
-              rx="50%"
-              ry="50%"
-              fx="100%"
-              fy="100%"
-              gradientUnits="userSpaceOnUse"
-            >
-              <Stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
-              <Stop offset="100%" stopColor="#020617" stopOpacity="0" />
-            </RadialGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad1)" />
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad2)" />
-        </Svg>
-      </View>
-
-      {/* Main Content Area */}
-      <View style={styles.contentLayer}>
-        {(!currentUser || currentScreen === 'login') ? (
-          <LoginScreen />
-        ) : currentScreen === 'details' ? (
-          <DetailsScreen />
-        ) : currentScreen === 'settings' ? (
-          <SettingsScreen />
-        ) : currentScreen === 'calendar' ? (
-          <CalendarScreen />
-        ) : (
-          <>
-            {currentScreen === 'home' && <HomeScreen />}
-            {currentScreen === 'workouts' && <WorkoutsScreen />}
-            {currentScreen === 'stats' && <StatsScreen />}
-            {currentScreen === 'stats' && <StatsScreen />}
-            {currentScreen === 'nutrition' && <NutritionScreen />}
-            {currentScreen === 'profile' && <ProfileScreen />}
-
-            <BottomNav />
-            <WorkoutLogModal />
-          </>
-        )}
-      </View>
-    </View>
-  );
-};
-
-// --- NUTRITION SCREEN (Restored) ---
-const NutritionScreen = () => {
-  const { dailyStats, updateDailyStats } = useUser();
-
-  const addWater = (amount: number) => {
-    updateDailyStats({ waterConsumed: (dailyStats?.waterConsumed || 0) + amount });
-  };
-
-  const waterConsumed = dailyStats?.waterConsumed || 0;
-
-  const renderFoodSection = (title: string, icon: any, color: string, calories: number) => (
-    <View style={{ marginBottom: 24 }} key={title}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {icon}
-          <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>{title}</Text>
-        </View>
-        <TouchableOpacity>
-          <PlusCircle size={20} color={colors.lime400} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.slate700 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ color: colors.slate300, fontSize: 14 }}>Adicionar alimento...</Text>
-          <Text style={{ color: colors.slate500, fontSize: 14 }}>0 kcal</Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  return (
-    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
-      <Text style={styles.screenTitle}>Dieta & Hidratação</Text>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Water Tracker Card */}
-        <View style={{
-          backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)',
-          borderRadius: 24, padding: 20, marginBottom: 32, overflow: 'hidden'
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Droplet size={24} color={colors.blue400} fill={colors.blue400} />
-              <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold' }}>Hidratação</Text>
+        <View style={{ backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.slate700 }}>
+          {sectionMeals.length === 0 ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ color: colors.slate300, fontSize: 14 }}>Adicionar alimento...</Text>
+              <Text style={{ color: colors.slate500, fontSize: 14 }}>0 / {goalCalories} kcal</Text>
             </View>
-            <Text style={{ color: colors.blue400, fontWeight: 'bold', fontSize: 18 }}>
-              {waterConsumed} <Text style={{ color: colors.slate400, fontSize: 14 }}>/ {userPreferences.goals.water} ml</Text>
-            </Text>
-          </View>
-
-          {/* Progress Bar */}
-          <View style={{ height: 12, backgroundColor: 'rgba(15, 23, 42, 0.5)', borderRadius: 6, marginBottom: 20, overflow: 'hidden' }}>
-            <View style={{
-              width: `${Math.min((waterConsumed / userPreferences.goals.water) * 100, 100)}%`,
-              height: '100%', backgroundColor: colors.blue400, borderRadius: 6
-            }} />
-          </View>
-
-          {/* Actions */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              onPress={() => addWater(250)}
-              style={{ flex: 1, backgroundColor: 'rgba(59, 130, 246, 0.2)', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
-            >
-              <Plus size={16} color={colors.blue400} />
-              <Text style={{ color: colors.blue400, fontWeight: 'bold' }}>250ml</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => addWater(500)}
-              style={{ flex: 1, backgroundColor: 'rgba(59, 130, 246, 0.2)', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
-            >
-              <Plus size={16} color={colors.blue400} />
-              <Text style={{ color: colors.blue400, fontWeight: 'bold' }}>500ml</Text>
-            </TouchableOpacity>
-          </View>
+          ) : (
+            <View>
+              {sectionMeals.map(meal => (
+                <View key={meal.id} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', paddingBottom: 4 }}>
+                  <Text style={{ color: colors.white }}>{meal.name}</Text>
+                  <Text style={{ color: colors.slate400 }}>{meal.calories} kcal</Text>
+                </View>
+              ))}
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
+                <Text style={{ color: colors.lime400, fontWeight: 'bold' }}>Total: {sectionCals} kcal</Text>
+              </View>
+            </View>
+          )}
         </View>
+      </View>
+      )};
 
-        {/* Food Sections */}
-        {renderFoodSection('Café da Manhã', <Apple size={18} color={colors.orange400} />, colors.orange400, 450)}
-        {renderFoodSection('Almoço', <Utensils size={18} color={colors.lime400} />, colors.lime400, 600)}
-        {renderFoodSection('Lanche', <Apple size={18} color={colors.lime400} />, colors.lime400, 200)}
-        {renderFoodSection('Jantar', <Utensils size={18} color={colors.blue400} />, colors.blue400, 450)}
+      return (
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: insets.top + 20 }}>
+        <Text style={styles.screenTitle}>Dieta & Hidratação</Text>
 
-      </ScrollView>
-    </View>
-  );
-};
-mainContainer: {
-  flex: 1,
-    backgroundColor: colors.slate950,
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+          {/* Water Tracker Card */}
+          <View style={{
+            backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)',
+            borderRadius: 24, padding: 20, marginBottom: 32, overflow: 'hidden'
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Droplet size={24} color={colors.blue400} fill={colors.blue400} />
+                <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold' }}>Hidratação</Text>
+              </View>
+              <Text style={{ color: colors.blue400, fontWeight: 'bold', fontSize: 18 }}>
+                {waterConsumed} <Text style={{ color: colors.slate400, fontSize: 14 }}>/ {userPreferences.goals.water} ml</Text>
+              </Text>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={{ height: 12, backgroundColor: 'rgba(15, 23, 42, 0.5)', borderRadius: 6, marginBottom: 20, overflow: 'hidden' }}>
+              <View style={{
+                width: `${Math.min((waterConsumed / userPreferences.goals.water) * 100, 100)}%`,
+                height: '100%', backgroundColor: colors.blue400, borderRadius: 6
+              }} />
+            </View>
+
+            {/* Actions */}
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => addWater(250)}
+                style={{ flex: 1, backgroundColor: 'rgba(59, 130, 246, 0.2)', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+              >
+                <Plus size={16} color={colors.blue400} />
+                <Text style={{ color: colors.blue400, fontWeight: 'bold' }}>250ml</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => addWater(500)}
+                style={{ flex: 1, backgroundColor: 'rgba(59, 130, 246, 0.2)', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 }}
+              >
+                <Plus size={16} color={colors.blue400} />
+                <Text style={{ color: colors.blue400, fontWeight: 'bold' }}>500ml</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Food Sections */}
+          {renderFoodSection('Café da Manhã', <Apple size={18} color={colors.orange400} />, colors.orange400, 450)}
+          {renderFoodSection('Almoço', <Utensils size={18} color={colors.lime400} />, colors.lime400, 600)}
+          {renderFoodSection('Lanche', <Apple size={18} color={colors.lime400} />, colors.lime400, 200)}
+          {renderFoodSection('Jantar', <Utensils size={18} color={colors.blue400} />, colors.blue400, 450)}
+
+        </ScrollView>
+
+        <FoodSearchModal
+          visible={searchModalVisible}
+          onClose={() => setSearchModalVisible(false)}
+          section={activeSection}
+          onAdd={handleAddFood}
+        />
+      </View>
+      );
+    };
+
+      const styles = StyleSheet.create({
+        mainContainer: {
+        flex: 1,
+      backgroundColor: colors.slate950,
   },
-glowContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
+      glowContainer: {
+        ...StyleSheet.absoluteFillObject,
+        overflow: 'hidden',
       zIndex: 0,
   },
-contentLayer: {
-  flex: 1,
-    zIndex: 10,
+      contentLayer: {
+        flex: 1,
+      zIndex: 10,
   },
-screenContainer: {
-  flex: 1,
-    paddingHorizontal: 24,
-  },
-screenTitle: {
-  fontSize: 28,
-    fontWeight: 'bold',
-      color: colors.white,
-        marginBottom: 20,
-  },
-header: {
-  flexDirection: 'row',
-    justifyContent: 'space-between',
-      alignItems: 'center',
-        marginBottom: 32,
-  },
-welcomeText: {
-  color: colors.slate400,
-    fontSize: 14,
-      fontWeight: '500',
-        marginBottom: 4,
-  },
-userNameText: {
-  fontSize: 30,
-    fontWeight: 'bold',
-      color: colors.white,
-        letterSpacing: -0.5,
-  },
-avatarContainer: {
-  padding: 2,
-    borderRadius: 50,
-      borderWidth: 1,
-        borderColor: colors.slate700,
-          backgroundColor: colors.slate800,
-            width: 44,
-              height: 44,
-                alignItems: 'center',
-                  justifyContent: 'center',
-                    overflow: 'hidden',
-  },
-avatar: {
-  width: 40,
-    height: 40,
-      borderRadius: 20,
-  },
-statsGrid: {
-  flexDirection: 'row',
-    gap: 16,
-      marginBottom: 32,
-  },
-statsCard: {
-  flex: 1,
-    backgroundColor: 'rgba(30, 41, 59, 0.5)', // slate-800/50
-      padding: 16,
-        borderRadius: 24,
-          borderWidth: 1,
-            borderColor: colors.slate700,
-              height: 128,
-                justifyContent: 'space-between',
-                  overflow: 'hidden',
-  },
-glow: {
-  position: 'absolute',
-    right: -16,
-      top: -16,
-        width: 96,
-          height: 96,
-            borderRadius: 48,
-  },
-statsHeader: {
-  flexDirection: 'row',
-    alignItems: 'center',
-      gap: 8,
-        marginBottom: 8,
-  },
-statsLabel: {
-  fontSize: 12,
-    fontWeight: 'bold',
-      textTransform: 'uppercase',
-        letterSpacing: 1,
-  },
-statsValue: {
-  fontSize: 24,
-    fontWeight: 'bold',
-      color: colors.white,
-  },
-statsSubtext: {
-  fontSize: 12,
-    color: colors.slate400,
-  },
-sectionHeader: {
-  flexDirection: 'row',
-    justifyContent: 'space-between',
-      alignItems: 'flex-end',
-        marginBottom: 16,
-  },
-sectionTitle: {
-  fontSize: 20,
-    fontWeight: 'bold',
-      color: colors.white,
-  },
-linkText: {
-  color: colors.lime400,
-    fontSize: 14,
-      fontWeight: '500',
-  },
-heroCard: {
-  height: 256,
-    borderRadius: 32,
-      overflow: 'hidden',
-        marginBottom: 32,
-          backgroundColor: colors.slate800,
-            // shadowing in RN
-            shadowColor: '#000',
-              shadowOffset: { width: 0, height: 10 },
-  shadowOpacity: 0.5,
-    shadowRadius: 20,
-      elevation: 10,
-  },
-heroImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-      height: '100%',
-  },
-heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-heroContent: {
-  position: 'absolute',
-    bottom: 0,
-      left: 0,
-        right: 0,
-          padding: 24,
-  },
-tagsRow: {
-  flexDirection: 'row',
-    gap: 8,
-      marginBottom: 12,
-  },
-tagBlur: {
-  overflow: 'hidden',
-    borderRadius: 100,
-      borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-  },
-tagTextLime: {
-  paddingHorizontal: 12,
-    paddingVertical: 4,
-      color: colors.lime400,
-        fontSize: 12,
-          fontWeight: '500',
-            backgroundColor: 'rgba(163, 230, 53, 0.2)',
-  },
-tagTextWhite: {
-  paddingHorizontal: 12,
-    paddingVertical: 4,
-      color: colors.white,
-        fontSize: 12,
-          fontWeight: '500',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-heroTitle: {
-  fontSize: 24,
-    fontWeight: 'bold',
-      color: colors.white,
-        marginBottom: 4,
-  },
-heroSubtitle: {
-  fontSize: 14,
-    color: colors.slate300,
-      marginBottom: 16,
-  },
-startButton: {
-  backgroundColor: colors.lime400,
-    paddingVertical: 14,
-      borderRadius: 16,
-        flexDirection: 'row',
-          justifyContent: 'center',
-            alignItems: 'center',
-              gap: 8,
-  },
-startButtonText: {
-  color: colors.slate950,
-    fontWeight: 'bold',
-      fontSize: 16,
-  },
-// Horizontal Section
-horizontalSection: {
-  marginBottom: 16,
-  },
-horizontalScroll: {
-  paddingRight: 24,
-    marginHorizontal: -24, // Break out of parent padding
+      screenContainer: {
+        flex: 1,
       paddingHorizontal: 24,
   },
-routineCard: {
-  width: 160,
-    padding: 12,
-      backgroundColor: 'rgba(30, 41, 59, 0.5)',
-        borderWidth: 1,
-          borderColor: colors.slate700,
-            borderRadius: 16,
-              marginRight: 16,
-  },
-routineImageContainer: {
-  height: 112,
-    borderRadius: 12,
-      overflow: 'hidden',
-        marginBottom: 12,
-          backgroundColor: colors.slate800,
-  },
-routineImage: {
-  width: '100%',
-    height: '100%',
-  },
-routineImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-routineTitle: {
-  color: colors.white,
-    fontSize: 14,
+      screenTitle: {
+        fontSize: 28,
       fontWeight: 'bold',
-        marginBottom: 4,
+      color: colors.white,
+      marginBottom: 20,
   },
-routineSubtitle: {
-  color: colors.slate400,
-    fontSize: 12,
+      header: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 32,
+  },
+      welcomeText: {
+        color: colors.slate400,
+      fontSize: 14,
+      fontWeight: '500',
+      marginBottom: 4,
+  },
+      userNameText: {
+        fontSize: 30,
+      fontWeight: 'bold',
+      color: colors.white,
+      letterSpacing: -0.5,
+  },
+      avatarContainer: {
+        padding: 2,
+      borderRadius: 50,
+      borderWidth: 1,
+      borderColor: colors.slate700,
+      backgroundColor: colors.slate800,
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+  },
+      avatar: {
+        width: 40,
+      height: 40,
+      borderRadius: 20,
+  },
+      statsGrid: {
+        flexDirection: 'row',
+      gap: 16,
+      marginBottom: 32,
+  },
+      statsCard: {
+        flex: 1,
+      backgroundColor: 'rgba(30, 41, 59, 0.5)', // slate-800/50
+      padding: 16,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.slate700,
+      height: 128,
+      justifyContent: 'space-between',
+      overflow: 'hidden',
+  },
+      glow: {
+        position: 'absolute',
+      right: -16,
+      top: -16,
+      width: 96,
+      height: 96,
+      borderRadius: 48,
+  },
+      statsHeader: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
       marginBottom: 8,
   },
-routineMeta: {
-  flexDirection: 'row',
-    alignItems: 'center',
-  },
-routineDuration: {
-  color: colors.lime400,
-    fontSize: 10,
+      statsLabel: {
+        fontSize: 12,
       fontWeight: 'bold',
-        marginLeft: 4,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
   },
-// Bottom Nav
-bottomNav: {
-  position: 'absolute',
-    bottom: 0,
-      left: 0,
-        right: 0,
-          borderTopWidth: 1,
-            borderTopColor: colors.slate800,
-              paddingHorizontal: 16,
-                paddingTop: 16,
+      statsValue: {
+        fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.white,
   },
-bottomNavContent: {
-  flexDirection: 'row',
-    justifyContent: 'space-between',
-      alignItems: 'center',
-  },
-navItem: {
-  alignItems: 'center',
-    gap: 4,
-      flex: 1,
-  },
-navText: {
-  fontSize: 10,
-    fontWeight: '500',
+      statsSubtext: {
+        fontSize: 12,
       color: colors.slate400,
   },
-fabContainer: {
-  position: 'relative',
-    top: -24,
-      flex: 1,
-        alignItems: 'center',
+      sectionHeader: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      marginBottom: 16,
   },
-fab: {
-  backgroundColor: colors.lime400,
-    padding: 16,
-      borderRadius: 50,
-        shadowColor: colors.lime400,
-          shadowOffset: { width: 0, height: 8 },
-  shadowOpacity: 0.3,
-    shadowRadius: 12,
-      elevation: 8,
-  },
-// Details Screen
-detailsContainer: {
-  flex: 1,
-    backgroundColor: colors.slate950,
-  },
-detailsHero: {
-  height: '45%',
-    width: '100%',
-      position: 'relative',
-  },
-detailsHeroImage: {
-  width: '100%',
-    height: '100%',
-  },
-detailsGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-detailsNav: {
-  position: 'absolute',
-    top: 0,
-      left: 0,
-        right: 0,
-          flexDirection: 'row',
-            justifyContent: 'space-between',
-              paddingHorizontal: 24,
-                paddingBottom: 24,
-  },
-detailsNavButton: {
-  width: 40,
-    height: 40,
-      borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-          justifyContent: 'center',
-            alignItems: 'center',
-              borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.1)',
-  },
-floatingStatsContainer: {
-  position: 'absolute',
-    bottom: 48,
-      left: 24,
-        right: 24,
-          flexDirection: 'row',
-            justifyContent: 'space-between',
-  },
-floatingStat: {
-  padding: 12,
-    borderRadius: 16,
-      overflow: 'hidden',
-        minWidth: 80,
-          alignItems: 'center',
-            borderWidth: 1,
-              borderColor: 'rgba(255,255,255,0.1)',
-                backgroundColor: 'rgba(15, 23, 42, 0.4)',
-  },
-floatingStatValueLime: {
-  color: colors.lime400,
-    fontWeight: 'bold',
-      fontSize: 18,
-  },
-floatingStatValueOrange: {
-  color: colors.orange400,
-    fontWeight: 'bold',
-      fontSize: 18,
-  },
-floatingStatValueBlue: {
-  color: colors.blue400,
-    fontWeight: 'bold',
-      fontSize: 18,
-  },
-floatingStatLabel: {
-  color: colors.slate300,
-    fontSize: 10,
+      sectionTitle: {
+        fontSize: 20,
       fontWeight: 'bold',
-        marginTop: 2,
-  },
-contentSheet: {
-  flex: 1,
-    marginTop: -32,
-      backgroundColor: colors.slate900,
-        borderTopLeftRadius: 40,
-          borderTopRightRadius: 40,
-            paddingHorizontal: 24,
-              paddingTop: 40,
-                borderTopWidth: 1,
-                  borderTopColor: colors.slate800,
-  },
-pullIndicator: {
-  position: 'absolute',
-    top: 16,
-      left: '50%',
-        marginLeft: -24,
-          width: 48,
-            height: 6,
-              backgroundColor: colors.slate700,
-                borderRadius: 3,
-  },
-sheetHeader: {
-  marginBottom: 24,
-  },
-sheetTitle: {
-  fontSize: 24,
-    fontWeight: 'bold',
       color: colors.white,
-        marginBottom: 4,
   },
-sheetMetaRow: {
-  flexDirection: 'row',
-    alignItems: 'center',
-      gap: 8,
-  },
-sheetMetaText: {
-  color: colors.slate400,
-    fontSize: 14,
-  },
-dot: {
-  width: 4,
-    height: 4,
-      borderRadius: 2,
-        backgroundColor: colors.slate600,
-  },
-sheetMetaLevel: {
-  color: colors.lime400,
-    fontSize: 14,
+      linkText: {
+        color: colors.lime400,
+      fontSize: 14,
       fontWeight: '500',
   },
-exercisesTitle: {
-  fontSize: 14,
-    fontWeight: '600',
-      color: colors.slate500,
-        marginBottom: 16,
-          letterSpacing: 1,
-  },
-exerciseCard: {
-  flexDirection: 'row',
-    alignItems: 'center',
+      heroCard: {
+        height: 256,
+      borderRadius: 32,
+      overflow: 'hidden',
+      marginBottom: 32,
       backgroundColor: colors.slate800,
-        padding: 16,
-          borderRadius: 16,
-            marginBottom: 16,
-              gap: 16,
+      // shadowing in RN
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 20,
+      elevation: 10,
   },
-exerciseImageContainer: {
-  width: 64,
-    height: 64,
-      borderRadius: 12,
+      heroImage: {
+        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+      height: '100%',
+  },
+      heroGradient: {
+        ...StyleSheet.absoluteFillObject,
+  },
+      heroContent: {
+        position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      padding: 24,
+  },
+      tagsRow: {
+        flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+  },
+      tagBlur: {
         overflow: 'hidden',
-          backgroundColor: colors.slate700,
+      borderRadius: 100,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
   },
-exerciseImage: {
-  width: '100%',
-    height: '100%',
+      tagTextLime: {
+        paddingHorizontal: 12,
+      paddingVertical: 4,
+      color: colors.lime400,
+      fontSize: 12,
+      fontWeight: '500',
+      backgroundColor: 'rgba(163, 230, 53, 0.2)',
+  },
+      tagTextWhite: {
+        paddingHorizontal: 12,
+      paddingVertical: 4,
+      color: colors.white,
+      fontSize: 12,
+      fontWeight: '500',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+      heroTitle: {
+        fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.white,
+      marginBottom: 4,
+  },
+      heroSubtitle: {
+        fontSize: 14,
+      color: colors.slate300,
+      marginBottom: 16,
+  },
+      startButton: {
+        backgroundColor: colors.lime400,
+      paddingVertical: 14,
+      borderRadius: 16,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 8,
+  },
+      startButtonText: {
+        color: colors.slate950,
+      fontWeight: 'bold',
+      fontSize: 16,
+  },
+      // Horizontal Section
+      horizontalSection: {
+        marginBottom: 16,
+  },
+      horizontalScroll: {
+        paddingRight: 24,
+      marginHorizontal: -24, // Break out of parent padding
+      paddingHorizontal: 24,
+  },
+      routineCard: {
+        width: 160,
+      padding: 12,
+      backgroundColor: 'rgba(30, 41, 59, 0.5)',
+      borderWidth: 1,
+      borderColor: colors.slate700,
+      borderRadius: 16,
+      marginRight: 16,
+  },
+      routineImageContainer: {
+        height: 112,
+      borderRadius: 12,
+      overflow: 'hidden',
+      marginBottom: 12,
+      backgroundColor: colors.slate800,
+  },
+      routineImage: {
+        width: '100%',
+      height: '100%',
+  },
+      routineImageOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+      routineTitle: {
+        color: colors.white,
+      fontSize: 14,
+      fontWeight: 'bold',
+      marginBottom: 4,
+  },
+      routineSubtitle: {
+        color: colors.slate400,
+      fontSize: 12,
+      marginBottom: 8,
+  },
+      routineMeta: {
+        flexDirection: 'row',
+      alignItems: 'center',
+  },
+      routineDuration: {
+        color: colors.lime400,
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginLeft: 4,
+  },
+      // Bottom Nav
+      bottomNav: {
+        position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      borderTopWidth: 1,
+      borderTopColor: colors.slate800,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+  },
+      bottomNavContent: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+  },
+      navItem: {
+        alignItems: 'center',
+      gap: 4,
+      flex: 1,
+  },
+      navText: {
+        fontSize: 10,
+      fontWeight: '500',
+      color: colors.slate400,
+  },
+      fabContainer: {
+        position: 'relative',
+      top: -24,
+      flex: 1,
+      alignItems: 'center',
+  },
+      fab: {
+        backgroundColor: colors.lime400,
+      padding: 16,
+      borderRadius: 50,
+      shadowColor: colors.lime400,
+      shadowOffset: {width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 8,
+  },
+      // Details Screen
+      detailsContainer: {
+        flex: 1,
+      backgroundColor: colors.slate950,
+  },
+      detailsHero: {
+        height: '45%',
+      width: '100%',
+      position: 'relative',
+  },
+      detailsHeroImage: {
+        width: '100%',
+      height: '100%',
+  },
+      detailsGradient: {
+        ...StyleSheet.absoluteFillObject,
+  },
+      detailsNav: {
+        position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingBottom: 24,
+  },
+      detailsNavButton: {
+        width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+  },
+      floatingStatsContainer: {
+        position: 'absolute',
+      bottom: 48,
+      left: 24,
+      right: 24,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+  },
+      floatingStat: {
+        padding: 12,
+      borderRadius: 16,
+      overflow: 'hidden',
+      minWidth: 80,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+      backgroundColor: 'rgba(15, 23, 42, 0.4)',
+  },
+      floatingStatValueLime: {
+        color: colors.lime400,
+      fontWeight: 'bold',
+      fontSize: 18,
+  },
+      floatingStatValueOrange: {
+        color: colors.orange400,
+      fontWeight: 'bold',
+      fontSize: 18,
+  },
+      floatingStatValueBlue: {
+        color: colors.blue400,
+      fontWeight: 'bold',
+      fontSize: 18,
+  },
+      floatingStatLabel: {
+        color: colors.slate300,
+      fontSize: 10,
+      fontWeight: 'bold',
+      marginTop: 2,
+  },
+      contentSheet: {
+        flex: 1,
+      marginTop: -32,
+      backgroundColor: colors.slate900,
+      borderTopLeftRadius: 40,
+      borderTopRightRadius: 40,
+      paddingHorizontal: 24,
+      paddingTop: 40,
+      borderTopWidth: 1,
+      borderTopColor: colors.slate800,
+  },
+      pullIndicator: {
+        position: 'absolute',
+      top: 16,
+      left: '50%',
+      marginLeft: -24,
+      width: 48,
+      height: 6,
+      backgroundColor: colors.slate700,
+      borderRadius: 3,
+  },
+      sheetHeader: {
+        marginBottom: 24,
+  },
+      sheetTitle: {
+        fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.white,
+      marginBottom: 4,
+  },
+      sheetMetaRow: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+  },
+      sheetMetaText: {
+        color: colors.slate400,
+      fontSize: 14,
+  },
+      dot: {
+        width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.slate600,
+  },
+      sheetMetaLevel: {
+        color: colors.lime400,
+      fontSize: 14,
+      fontWeight: '500',
+  },
+      exercisesTitle: {
+        fontSize: 14,
+      fontWeight: '600',
+      color: colors.slate500,
+      marginBottom: 16,
+      letterSpacing: 1,
+  },
+      exerciseCard: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.slate800,
+      padding: 16,
+      borderRadius: 16,
+      marginBottom: 16,
+      gap: 16,
+  },
+      exerciseImageContainer: {
+        width: 64,
+      height: 64,
+      borderRadius: 12,
+      overflow: 'hidden',
+      backgroundColor: colors.slate700,
+  },
+      exerciseImage: {
+        width: '100%',
+      height: '100%',
       opacity: 0.8,
   },
-exerciseOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+      exerciseOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.1)',
   },
-completedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(132, 204, 22, 0.8)',
+      completedOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(132, 204, 22, 0.8)',
       justifyContent: 'center',
-        alignItems: 'center',
+      alignItems: 'center',
   },
-exerciseInfo: {
-  flex: 1,
+      exerciseInfo: {
+        flex: 1,
   },
-exerciseName: {
-  color: colors.white,
-    fontWeight: '600',
+      exerciseName: {
+        color: colors.white,
+      fontWeight: '600',
       fontSize: 16,
-        marginBottom: 4,
+      marginBottom: 4,
   },
-completedText: {
-  color: colors.slate500,
-    textDecorationLine: 'line-through',
+      completedText: {
+        color: colors.slate500,
+      textDecorationLine: 'line-through',
   },
-exerciseStats: {
-  flexDirection: 'row',
-    alignItems: 'center',
+      exerciseStats: {
+        flexDirection: 'row',
+      alignItems: 'center',
       gap: 12,
   },
-exerciseTag: {
-  backgroundColor: colors.slate700,
-    paddingHorizontal: 8,
+      exerciseTag: {
+        backgroundColor: colors.slate700,
+      paddingHorizontal: 8,
       paddingVertical: 2,
-        borderRadius: 6,
+      borderRadius: 6,
   },
-exerciseTagText: {
-  color: colors.slate300,
-    fontSize: 12,
+      exerciseTagText: {
+        color: colors.slate300,
+      fontSize: 12,
   },
-exerciseReps: {
-  color: colors.slate400,
-    fontSize: 12,
+      exerciseReps: {
+        color: colors.slate400,
+      fontSize: 12,
   },
-playButtonSmall: {
-  width: 32,
-    height: 32,
+      playButtonSmall: {
+        width: 32,
+      height: 32,
       borderRadius: 16,
-        borderWidth: 1,
-          borderColor: colors.slate600,
-            justifyContent: 'center',
-              alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.slate600,
+      justifyContent: 'center',
+      alignItems: 'center',
   },
-stickyCTA: {
-  position: 'absolute',
-    bottom: 0,
+      stickyCTA: {
+        position: 'absolute',
+      bottom: 0,
       left: 24,
-        right: 24,
-          paddingTop: 16, // spacing from content
-            backgroundColor: colors.slate900, // Background to cover scroll content
+      right: 24,
+      paddingTop: 16, // spacing from content
+      backgroundColor: colors.slate900, // Background to cover scroll content
   },
-mainButton: {
-  backgroundColor: colors.lime400,
-    height: 56,
+      mainButton: {
+        backgroundColor: colors.lime400,
+      height: 56,
       borderRadius: 20,
-        flexDirection: 'row',
-          alignItems: 'center',
-            justifyContent: 'center',
-              gap: 12,
-                shadowColor: colors.lime400,
-                  shadowOffset: { width: 0, height: 0 },
-  shadowOpacity: 0.5,
-    shadowRadius: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      shadowColor: colors.lime400,
+      shadowOffset: {width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 10,
       elevation: 5,
   },
-mainButtonText: {
-  color: colors.slate900,
-    fontSize: 16,
+      mainButtonText: {
+        color: colors.slate900,
+      fontSize: 16,
       fontWeight: 'bold',
-        letterSpacing: 0.5,
+      letterSpacing: 0.5,
   },
-// Menu Item
-menuItem: {
-  flexDirection: 'row',
-    alignItems: 'center',
+      // Menu Item
+      menuItem: {
+        flexDirection: 'row',
+      alignItems: 'center',
       padding: 16,
-        borderRadius: 16,
-          backgroundColor: 'rgba(30, 41, 59, 0.5)',
-            borderWidth: 1,
-              borderColor: colors.slate700,
-                marginBottom: 12,
-                  gap: 16,
+      borderRadius: 16,
+      backgroundColor: 'rgba(30, 41, 59, 0.5)',
+      borderWidth: 1,
+      borderColor: colors.slate700,
+      marginBottom: 12,
+      gap: 16,
   },
-menuItemText: {
-  color: colors.white,
-    fontSize: 16,
+      menuItemText: {
+        color: colors.white,
+      fontSize: 16,
       fontWeight: '500',
   }
 });
 
-export default GlassFitnessApp;
+      export default GlassFitnessApp;
