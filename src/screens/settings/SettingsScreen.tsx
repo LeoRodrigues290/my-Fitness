@@ -1,116 +1,146 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Screen } from '../../components/ui/Screen';
-import { AppHeader } from '../../components/ui/AppHeader';
-import { GlassView } from '../../components/ui/GlassView';
-import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { Target, User, Bell, ChevronRight, LogOut, Calendar, TrendingUp, Dumbbell } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { User, ChevronRight, LogOut, Calendar, TrendingUp, Dumbbell } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
+import { colors } from '../../constants/colors';
 
-export const SettingsScreen = ({ navigation }: any) => {
+interface SettingsScreenProps {
+    onBack: () => void;
+    onRoutinePress: () => void;
+    onExerciseLibraryPress: () => void;
+    onProgressPress: () => void;
+    onProfilePress: () => void;
+}
+
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+    onBack,
+    onRoutinePress,
+    onExerciseLibraryPress,
+    onProgressPress,
+    onProfilePress
+}) => {
+    const insets = useSafeAreaInsets();
     const { setUser } = useUser();
 
     const handleLogout = () => {
         setUser(null);
+        onBack(); // Volta para tela anterior após logout
     };
 
-    const MenuItem = ({ icon: Icon, label, onPress, color = COLORS.white }: any) => (
-        <TouchableOpacity onPress={onPress}>
-            <GlassView style={styles.menuItem} intensity={10}>
-                <View style={styles.menuLeft}>
-                    <View style={[styles.iconBox, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                        <Icon color={color} size={20} />
-                    </View>
-                    <Text style={[styles.menuText, { color }]}>{label}</Text>
-                </View>
-                <ChevronRight color={COLORS.textSecondary} size={20} />
-            </GlassView>
-        </TouchableOpacity>
-    );
-
     return (
-        <Screen>
-            <AppHeader title="Configurações" showNotification={false} />
-            <ScrollView contentContainerStyle={styles.content}>
+        <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
+            <View style={styles.header}>
+                <Text style={styles.title}>Configurações</Text>
+            </View>
 
-                <Text style={styles.sectionTitle}>Treinos</Text>
-                <MenuItem
-                    icon={Calendar}
-                    label="Configurar Rotina"
-                    onPress={() => navigation.navigate('RoutineSettings')}
-                />
-                <MenuItem
-                    icon={Dumbbell}
-                    label="Gerenciar Exercícios"
-                    onPress={() => navigation.navigate('ExerciseLibrary')}
-                />
-                <MenuItem
-                    icon={TrendingUp}
-                    label="Evolução de Carga"
-                    onPress={() => navigation.navigate('ExerciseProgress')}
-                />
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <Text style={styles.sectionTitle}>TREINOS</Text>
 
-                <Text style={styles.sectionTitle}>Conta</Text>
-                <MenuItem
-                    icon={User}
-                    label="Editar Perfil"
-                    onPress={() => navigation.navigate('ProfileSelection')}
-                />
-                <MenuItem
-                    icon={Bell}
-                    label="Notificações"
-                    onPress={() => { }}
-                />
+                <TouchableOpacity style={styles.menuItem} onPress={onRoutinePress}>
+                    <Calendar size={20} color={colors.white} />
+                    <Text style={styles.menuItemText}>Configurar Rotina</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
 
-                <View style={{ marginTop: SPACING.xl }}>
-                    <MenuItem
-                        icon={LogOut}
-                        label="Sair"
-                        color={COLORS.error}
-                        onPress={handleLogout}
-                    />
-                </View>
+                <TouchableOpacity style={styles.menuItem} onPress={onExerciseLibraryPress}>
+                    <Dumbbell size={20} color={colors.white} />
+                    <Text style={styles.menuItemText}>Gerenciar Exercícios</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
 
+                <TouchableOpacity style={styles.menuItem} onPress={onProgressPress}>
+                    <TrendingUp size={20} color={colors.white} />
+                    <Text style={styles.menuItemText}>Evolução de Carga</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
+
+                <Text style={styles.sectionTitle}>CONTA</Text>
+
+                <TouchableOpacity style={styles.menuItem} onPress={onProfilePress}>
+                    <User size={20} color={colors.white} />
+                    <Text style={styles.menuItemText}>Editar Perfil</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <LogOut size={20} color={colors.red500} />
+                    <Text style={styles.logoutText}>Sair da Conta</Text>
+                </TouchableOpacity>
             </ScrollView>
-        </Screen>
+        </View>
     );
 };
 
+
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        paddingHorizontal: 24,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 30,
+    },
+    backButton: {
+        padding: 8,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 12,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: colors.white,
+    },
     content: {
-        padding: SPACING.m,
+        paddingBottom: 100,
     },
     sectionTitle: {
-        color: COLORS.textSecondary,
-        fontSize: SIZES.small,
+        color: colors.slate400,
+        fontSize: 12,
         fontWeight: 'bold',
-        marginTop: SPACING.l,
-        marginBottom: SPACING.s,
-        marginLeft: SPACING.xs,
+        marginTop: 24,
+        marginBottom: 12,
+        marginLeft: 4,
         textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: SPACING.m,
-        borderRadius: RADIUS.m,
-        marginBottom: SPACING.s,
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderWidth: 1,
+        borderColor: colors.slate700,
+        marginBottom: 12,
+        gap: 16,
     },
-    menuLeft: {
+    menuItemText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '500',
+        flex: 1,
+    },
+    menuArrow: {
+        marginLeft: 'auto',
+    },
+    logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: SPACING.m,
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(239, 68, 68, 0.2)',
+        marginTop: 40,
+        gap: 16,
     },
-    iconBox: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    menuText: {
-        fontSize: SIZES.body,
+    logoutText: {
+        color: colors.red500,
+        fontSize: 16,
         fontWeight: '500',
-    }
+    },
 });

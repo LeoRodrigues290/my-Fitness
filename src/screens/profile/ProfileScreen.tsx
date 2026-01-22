@@ -73,11 +73,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <ArrowRight size={16} color={colors.slate600} style={styles.menuArrow} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+
+            {/* <TouchableOpacity style={styles.menuItem}>
                 <Activity size={20} color={colors.white} />
                 <Text style={styles.menuItemText}>Histórico</Text>
                 <ArrowRight size={16} color={colors.slate600} style={styles.menuArrow} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+            {/* Botão Histórico temporariamente removido - feature futura */}
 
             <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
                 <LogOut size={20} color={colors.red500} />

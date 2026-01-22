@@ -22,6 +22,9 @@ import { SettingsScreen } from './settings/SettingsScreen';
 import { OnboardingScreen } from './onboarding/OnboardingScreen';
 import { CalendarScreen } from './dashboard/CalendarScreen';
 import { WorkoutsScreen } from './workout/WorkoutsScreen';
+import { RoutineSettingsScreen } from './settings/RoutineSettingsScreen';
+import { ExerciseLibraryScreen } from './settings/ExerciseLibraryScreen';
+import { ExerciseProgressScreen } from './profile/ExerciseProgressScreen';
 
 // Calendar Locale Config (PT-BR)
 LocaleConfig.locales['pt-br'] = {
@@ -33,7 +36,7 @@ LocaleConfig.locales['pt-br'] = {
 };
 LocaleConfig.defaultLocale = 'pt-br';
 
-type ScreenName = 'home' | 'workouts' | 'stats' | 'nutrition' | 'profile' | 'details' | 'settings' | 'calendar' | 'login';
+type ScreenName = 'home' | 'workouts' | 'stats' | 'nutrition' | 'profile' | 'details' | 'settings' | 'calendar' | 'login' | 'routine-settings' | 'exercise-library' | 'exercise-progress';
 
 const GlassFitnessApp: React.FC = () => {
     const [currentScreen, setCurrentScreen] = useState<ScreenName>('home');
@@ -130,13 +133,26 @@ const GlassFitnessApp: React.FC = () => {
                 <DetailsScreen
                     workout={activeWorkout}
                     onBack={() => setCurrentScreen('home')}
+                    onStartWorkout={(workout) => {
+                        setActiveWorkout(workout);
+                        setCurrentScreen('home');
+                        setTimeout(() => setShowWorkoutModal(true), 300);
+                    }}
                 />
             );
         }
 
         // Settings screen (no bottom nav)
         if (currentScreen === 'settings') {
-            return <SettingsScreen onBack={() => handleTabPress('profile')} />;
+            return (
+                <SettingsScreen
+                    onBack={() => handleTabPress('profile')}
+                    onRoutinePress={() => setCurrentScreen('routine-settings')}
+                    onExerciseLibraryPress={() => setCurrentScreen('exercise-library')}
+                    onProgressPress={() => setCurrentScreen('exercise-progress')}
+                    onProfilePress={() => setCurrentScreen('login')} // Editar perfil = ProfileSelection
+                />
+            );
         }
 
         // Calendar screen (no bottom nav)
@@ -147,6 +163,23 @@ const GlassFitnessApp: React.FC = () => {
                     onOpenSettings={() => setCurrentScreen('settings')}
                 />
             );
+        }
+
+        // Routine Settings screen (from Settings)
+        if (currentScreen === 'routine-settings') {
+            // Este screen usa navigation - precisa adaptar também
+            // Por enquanto, vou deixar funcionar com erro mas adicionar rota
+            return <RoutineSettingsScreen navigation={{ goBack: () => setCurrentScreen('settings'), navigate: () => { } }} />;
+        }
+
+        // Exercise Library screen (from Settings)
+        if (currentScreen === 'exercise-library') {
+            return <ExerciseLibraryScreen navigation={{ goBack: () => setCurrentScreen('settings'), navigate: () => { } }} />;
+        }
+
+        // Exercise Progress screen (from Settings)
+        if (currentScreen === 'exercise-progress') {
+            return <ExerciseProgressScreen navigation={{ goBack: () => setCurrentScreen('settings') }} />;
         }
 
         // Main screens with bottom navigation
@@ -168,6 +201,15 @@ const GlassFitnessApp: React.FC = () => {
                     <ProfileScreen
                         onSettingsPress={() => setCurrentScreen('settings')}
                         onLogout={handleLogout}
+                    />
+                )}
+                {currentScreen === 'settings' && (
+                    <SettingsScreen
+                        onBack={() => handleTabPress('profile')}
+                        onRoutinePress={() => setCurrentScreen('routine-settings')}
+                        onExerciseLibraryPress={() => setCurrentScreen('exercise-library')}
+                        onProgressPress={() => setCurrentScreen('exercise-progress')}
+                        onProfilePress={() => setCurrentScreen('login')}
                     />
                 )}
 

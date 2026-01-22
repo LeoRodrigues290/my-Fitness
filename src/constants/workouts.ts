@@ -29,10 +29,10 @@ export const workoutsData: Workout[] = [
         level: "Avançado",
         image: "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?q=80&w=2070&auto=format&fit=crop",
         exercises: [
-            { id: 1, name: "Barra Fixa (Pull-up)", sets: "4 séries", reps: "8-10 reps", completed: false },
-            { id: 2, name: "Remada Curvada", sets: "4 séries", reps: "10-12 reps", completed: false },
-            { id: 3, name: "Puxada Alta", sets: "3 séries", reps: "12 reps", completed: false },
-            { id: 4, name: "Rosca Direta", sets: "3 séries", reps: "12-15 reps", completed: false },
+            { id: 1, name: "Barra Fixa (Pull-up)", sets: "4 séries", reps: "8-10 reps", completed: false, video_url: "eGo4IYlbE5g" },
+            { id: 2, name: "Remada Curvada", sets: "4 séries", reps: "10-12 reps", completed: false, video_url: "vT2GjY_Umpw" },
+            { id: 3, name: "Puxada Alta", sets: "3 séries", reps: "12 reps", completed: false, video_url: "CAwf7n6Luuc" },
+            { id: 4, name: "Rosca Direta", sets: "3 séries", reps: "12-15 reps", completed: false, video_url: "ykJmrZ5v0Oo" },
         ]
     },
     {
@@ -44,10 +44,10 @@ export const workoutsData: Workout[] = [
         level: "Difícil",
         image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop",
         exercises: [
-            { id: 1, name: "Agachamento Livre", sets: "4 séries", reps: "8-10 reps", completed: false },
-            { id: 2, name: "Leg Press 45", sets: "4 séries", reps: "12-15 reps", completed: false },
-            { id: 3, name: "Cadeira Extensora", sets: "3 séries", reps: "15-20 reps", completed: false },
-            { id: 4, name: "Stiff", sets: "3 séries", reps: "12 reps", completed: false },
+            { id: 1, name: "Agachamento Livre", sets: "4 séries", reps: "8-10 reps", completed: false, video_url: "ultWZbUMPa8" },
+            { id: 2, name: "Leg Press 45", sets: "4 séries", reps: "12-15 reps", completed: false, video_url: "IZxyjW7MPJQ" },
+            { id: 3, name: "Cadeira Extensora", sets: "3 séries", reps: "15-20 reps", completed: false, video_url: "YyvSfVjQeL0" },
+            { id: 4, name: "Stiff", sets: "3 séries", reps: "12 reps", completed: false, video_url: "1uDiW5--rAE" },
         ]
     },
     {
@@ -59,10 +59,10 @@ export const workoutsData: Workout[] = [
         level: "Intermediário",
         image: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=2070&auto=format&fit=crop",
         exercises: [
-            { id: 1, name: "Desenvolvimento Militar", sets: "4 séries", reps: "10-12 reps", completed: false },
-            { id: 2, name: "Elevação Lateral", sets: "3 séries", reps: "15 reps", completed: false },
-            { id: 3, name: "Face Pull", sets: "3 séries", reps: "15 reps", completed: false },
-            { id: 4, name: "Prancha Abdominal", sets: "3 séries", reps: "1 min", completed: false },
+            { id: 1, name: "Desenvolvimento Militar", sets: "4 séries", reps: "10-12 reps", completed: false, video_url: "2yjwXTZQDDI" },
+            { id: 2, name: "Elevação Lateral", sets: "3 séries", reps: "15 reps", completed: false, video_url: "3VcKaXpzqRo" },
+            { id: 3, name: "Face Pull", sets: "3 séries", reps: "15 reps", completed: false, video_url: "V8dZ3pyiCBo" },
+            { id: 4, name: "Prancha Abdominal", sets: "3 séries", reps: "1 min", completed: false, video_url: "ASdvN_XEl_c" },
         ]
     },
     {
@@ -74,10 +74,10 @@ export const workoutsData: Workout[] = [
         level: "Intenso",
         image: "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80&w=2069&auto=format&fit=crop",
         exercises: [
-            { id: 1, name: "Burpees", sets: "4 séries", reps: "15 reps", completed: false },
-            { id: 2, name: "Kettlebell Swing", sets: "4 séries", reps: "20 reps", completed: false },
-            { id: 3, name: "Box Jump", sets: "3 séries", reps: "12 reps", completed: false },
-            { id: 4, name: "Man Maker", sets: "3 séries", reps: "10 reps", completed: false },
+            { id: 1, name: "Burpees", sets: "4 séries", reps: "15 reps", completed: false, video_url: "TU8QYVW0gDU" },
+            { id: 2, name: "Kettlebell Swing", sets: "4 séries", reps: "20 reps", completed: false, video_url: "YSxHYTTniE" },
+            { id: 3, name: "Box Jump", sets: "3 séries", reps: "12 reps", completed: false, video_url: "52r_Ul1s74I" },
+            { id: 4, name: "Man Maker", sets: "3 séries", reps: "10 reps", completed: false, video_url: "c83Y3Y66Q" },
         ]
     }
 ];

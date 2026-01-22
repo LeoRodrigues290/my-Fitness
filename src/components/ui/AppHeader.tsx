@@ -4,17 +4,22 @@ import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GlassView } from './GlassView';
 import { Bell, User, Settings, LogOut, Flame } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
-import { useNavigation } from '@react-navigation/native';
 import { UserRepository } from '../../services/UserRepository';
 
 interface AppHeaderProps {
     title?: string;
     showNotification?: boolean;
+    onBackPress?: () => void;
+    onSettingsPress?: () => void;
 }
 
-export const AppHeader: React.FC<AppHeaderProps> = ({ title, showNotification = true }) => {
+export const AppHeader: React.FC<AppHeaderProps> = ({
+    title,
+    showNotification = true,
+    onBackPress,
+    onSettingsPress
+}) => {
     const { currentUser, setUser } = useUser();
-    const navigation = useNavigation<any>();
     const [menuVisible, setMenuVisible] = useState(false);
     const [streak, setStreak] = useState(0);
 
@@ -31,14 +36,16 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ title, showNotification = 
     };
 
     const menuItems = [
-        {
-            icon: Settings,
-            label: 'Configurações',
-            action: () => {
-                setMenuVisible(false);
-                navigation.navigate('Settings');
-            }
-        },
+        ...(
+            onSettingsPress ? [{
+                icon: Settings,
+                label: 'Configurações',
+                action: () => {
+                    setMenuVisible(false);
+                    onSettingsPress();
+                }
+            }] : []
+        ),
         {
             icon: LogOut,
             label: 'Sair',

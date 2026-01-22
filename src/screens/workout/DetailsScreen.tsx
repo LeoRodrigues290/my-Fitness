@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -13,15 +13,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Play, ChevronLeft, MoreHorizontal, Calendar } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { ExerciseCard } from '../../components/ui/ExerciseCard';
+import { VideoInstructionModal } from '../../components/ui/VideoInstructionModal';
 import { Workout } from '../../types';
 
 interface DetailsScreenProps {
     workout: Workout;
     onBack: () => void;
+    onStartWorkout?: (workout: Workout) => void;
 }
 
-export const DetailsScreen: React.FC<DetailsScreenProps> = ({ workout, onBack }) => {
+export const DetailsScreen: React.FC<DetailsScreenProps> = ({ workout, onBack, onStartWorkout }) => {
     const insets = useSafeAreaInsets();
+
+    // Video modal state
+    const [videoModalVisible, setVideoModalVisible] = useState(false);
+    const [selectedExercise, setSelectedExercise] = useState<any>(null);
+
+    const handleShowVideo = (exercise: any) => {
+        setSelectedExercise(exercise);
+        setVideoModalVisible(true);
+    };
+
+    const handleStartWorkout = () => {
+        if (onStartWorkout) {
+            onStartWorkout(workout);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -37,9 +54,6 @@ export const DetailsScreen: React.FC<DetailsScreenProps> = ({ workout, onBack })
                 <View style={[styles.nav, { paddingTop: insets.top + 10 }]}>
                     <TouchableOpacity onPress={onBack} style={styles.navButton}>
                         <ChevronLeft size={24} color={colors.white} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.navButton}>
-                        <MoreHorizontal size={24} color={colors.white} />
                     </TouchableOpacity>
                 </View>
 
@@ -83,17 +97,31 @@ export const DetailsScreen: React.FC<DetailsScreenProps> = ({ workout, onBack })
                     </Text>
 
                     {workout.exercises.map((exercise, index) => (
-                        <ExerciseCard key={exercise.id} exercise={exercise} index={index} />
+                        <ExerciseCard
+                            key={exercise.id}
+                            exercise={exercise}
+                            index={index}
+                            onPress={() => handleShowVideo(exercise)}
+                        />
                     ))}
                 </ScrollView>
 
-                {/* Sticky CTA */}
                 <View style={[styles.stickyCTA, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-                    <TouchableOpacity style={styles.mainButton}>
+                    <TouchableOpacity style={styles.mainButton} onPress={handleStartWorkout}>
                         <Play size={20} color={colors.slate900} fill={colors.slate900} />
                         <Text style={styles.mainButtonText}>INICIAR TREINO</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Video Instruction Modal */}
+                <VideoInstructionModal
+                    visible={videoModalVisible}
+                    videoId={selectedExercise?.video_url || null}
+                    exerciseName={selectedExercise?.name || ''}
+                    instructions={selectedExercise?.instructions || null}
+                    muscleGroup={selectedExercise?.muscle_group}
+                    onClose={() => setVideoModalVisible(false)}
+                />
             </View>
         </View>
     );

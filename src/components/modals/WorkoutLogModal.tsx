@@ -48,6 +48,16 @@ export const WorkoutLogModal: React.FC<WorkoutLogModalProps> = ({
     }, [logWorkoutId]);
 
     const handleFinish = async () => {
+        // Validate that at least one exercise has data
+        const hasValidData = logExercises.some(ex =>
+            ex.actualSets > 0 || ex.weight > 0 || ex.actualReps.length > 0
+        );
+
+        if (!hasValidData) {
+            // Could show alert here, but for now just prevent empty saves
+            return;
+        }
+
         await onFinish(logWorkoutId, logExercises);
         onClose();
     };
