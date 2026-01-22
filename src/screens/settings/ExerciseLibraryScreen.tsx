@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { GradientButton } from '../../components/ui/GradientButton';
@@ -36,11 +35,9 @@ export const ExerciseLibraryScreen = ({ navigation }: any) => {
         setMuscleGroups(groups);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            loadExercises();
-        }, [])
-    );
+    useEffect(() => {
+        loadExercises();
+    }, []);
 
     // Filter exercises
     useEffect(() => {
@@ -347,7 +344,11 @@ const styles = StyleSheet.create({
         paddingTop: SPACING.l,
     },
     backBtn: {
-        padding: SPACING.s,
+        padding: 8,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     title: {
         color: COLORS.white,

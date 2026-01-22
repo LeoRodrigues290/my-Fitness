@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
@@ -31,11 +30,9 @@ export const ExerciseProgressScreen = ({ navigation }: any) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     // Load exercises
-    useFocusEffect(
-        useCallback(() => {
-            loadExercises();
-        }, [])
-    );
+    useEffect(() => {
+        loadExercises();
+    }, []);
 
     const loadExercises = async () => {
         const all = await ExerciseLibraryRepository.getAllExercises();
@@ -307,7 +304,11 @@ const styles = StyleSheet.create({
         paddingTop: SPACING.l,
     },
     backBtn: {
-        padding: SPACING.s,
+        padding: 8,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     title: {
         color: COLORS.white,
@@ -351,7 +352,7 @@ const styles = StyleSheet.create({
         borderBottomColor: 'rgba(255, 255, 255, 0.05)',
     },
     dropdownItemActive: {
-        backgroundColor: `${COLORS.lime}20`,
+        backgroundColor: `${COLORS.lime} 20`,
     },
     dropdownItemText: {
         color: COLORS.white,

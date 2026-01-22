@@ -31,7 +31,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     return (
         <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
             <View style={styles.header}>
+                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                    <ChevronRight size={24} color={colors.white} style={{ transform: [{ rotate: '180deg' }] }} />
+                </TouchableOpacity>
                 <Text style={styles.title}>Configurações</Text>
+                <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

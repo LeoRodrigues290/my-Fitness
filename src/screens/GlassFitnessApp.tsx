@@ -142,19 +142,6 @@ const GlassFitnessApp: React.FC = () => {
             );
         }
 
-        // Settings screen (no bottom nav)
-        if (currentScreen === 'settings') {
-            return (
-                <SettingsScreen
-                    onBack={() => handleTabPress('profile')}
-                    onRoutinePress={() => setCurrentScreen('routine-settings')}
-                    onExerciseLibraryPress={() => setCurrentScreen('exercise-library')}
-                    onProgressPress={() => setCurrentScreen('exercise-progress')}
-                    onProfilePress={() => setCurrentScreen('login')} // Editar perfil = ProfileSelection
-                />
-            );
-        }
-
         // Calendar screen (no bottom nav)
         if (currentScreen === 'calendar') {
             return (
@@ -167,14 +154,25 @@ const GlassFitnessApp: React.FC = () => {
 
         // Routine Settings screen (from Settings)
         if (currentScreen === 'routine-settings') {
-            // Este screen usa navigation - precisa adaptar também
-            // Por enquanto, vou deixar funcionar com erro mas adicionar rota
-            return <RoutineSettingsScreen navigation={{ goBack: () => setCurrentScreen('settings'), navigate: () => { } }} />;
+            return <RoutineSettingsScreen navigation={{
+                goBack: () => setCurrentScreen('settings'),
+                navigate: (route: string, params?: any) => {
+                    if (route === 'CreateTemplate') {
+                        // TODO: Add CreateTemplate to GlassFitnessApp routes
+                        console.log('Navigate to CreateTemplate', params);
+                    } else if (route === 'ExerciseLibrary') {
+                        setCurrentScreen('exercise-library');
+                    }
+                }
+            }} />;
         }
 
         // Exercise Library screen (from Settings)
         if (currentScreen === 'exercise-library') {
-            return <ExerciseLibraryScreen navigation={{ goBack: () => setCurrentScreen('settings'), navigate: () => { } }} />;
+            return <ExerciseLibraryScreen navigation={{
+                goBack: () => setCurrentScreen('settings'),
+                navigate: () => console.log('Navigation not implemented yet')
+            }} />;
         }
 
         // Exercise Progress screen (from Settings)

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, FlatList } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
@@ -37,11 +36,9 @@ export const RoutineSettingsScreen = ({ navigation }: any) => {
         setDayAssignments(assignments);
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            loadData();
-        }, [currentUser])
-    );
+    useEffect(() => {
+        loadData();
+    }, [currentUser]);
 
     const handleDayPress = (dayIndex: number) => {
         setSelectedDay(dayIndex);
@@ -281,7 +278,11 @@ const styles = StyleSheet.create({
         paddingTop: SPACING.l,
     },
     backBtn: {
-        padding: SPACING.s,
+        padding: 8,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     title: {
         color: COLORS.white,
@@ -291,14 +292,20 @@ const styles = StyleSheet.create({
     descriptionContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: SPACING.m,
+        marginHorizontal: SPACING.l,
+        marginBottom: SPACING.l,
+        backgroundColor: 'rgba(163, 230, 53, 0.1)',
+        borderRadius: RADIUS.m,
+        borderWidth: 1,
+        borderColor: 'rgba(163, 230, 53, 0.2)',
         gap: SPACING.s,
-        paddingHorizontal: SPACING.l,
-        marginBottom: SPACING.m,
     },
     description: {
-        color: COLORS.textSecondary,
-        fontSize: SIZES.small,
         flex: 1,
+        color: COLORS.lime,
+        fontSize: SIZES.small,
+        fontWeight: '500',
     },
     quickActions: {
         flexDirection: 'row',
@@ -311,15 +318,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: SPACING.s,
-        paddingVertical: SPACING.m,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        padding: SPACING.m,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
         borderRadius: RADIUS.m,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        gap: SPACING.s,
     },
     quickActionText: {
         color: COLORS.white,
         fontSize: SIZES.small,
-        fontWeight: '500',
+        fontWeight: '600',
     },
     content: {
         padding: SPACING.l,
