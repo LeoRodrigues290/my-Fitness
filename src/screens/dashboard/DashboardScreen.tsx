@@ -9,7 +9,7 @@ import { Flame, Dumbbell, TrendingUp } from 'lucide-react-native';
 import { WorkoutRepository } from '../../services/WorkoutRepository';
 import { NutritionRepository } from '../../services/NutritionRepository';
 import { UserRepository } from '../../services/UserRepository';
-import { VictoryBar, VictoryChart, VictoryAxis } from 'victory-native';
+import { BarChart } from 'react-native-chart-kit';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { AnimatedState } from '../../components/ui/AnimatedState';
 
@@ -23,7 +23,7 @@ export const DashboardScreen = ({ navigation }: any) => {
         weight: 0,
         lastWorkout: 'No workouts yet',
     });
-    const [weeklyData, setWeeklyData] = useState<any[]>([]);
+    const [weeklyData, setWeeklyData] = useState<any>({ labels: [], datasets: [] });
     const [loading, setLoading] = useState(true);
 
     const loadData = async () => {
@@ -53,16 +53,18 @@ export const DashboardScreen = ({ navigation }: any) => {
 
             // Fill missing days
             const days = eachDayOfInterval({ start, end });
-            const chartData = days.map(day => {
+            const labels = days.map(day => format(day, 'EEE'));
+            const dataValues = days.map(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
                 // @ts-ignore
                 const log = weakCalories.find(w => w.date === dateStr);
-                return {
-                    day: format(day, 'EEE'),
-                    calories: log ? log.totalCalories : 0
-                };
+                return log ? log.totalCalories : 0;
             });
-            setWeeklyData(chartData);
+
+            setWeeklyData({
+                labels: labels,
+                datasets: [{ data: dataValues }]
+            });
 
             // 5. Streak
             const streak = await UserRepository.getUserStreak(currentUser.id);
@@ -145,44 +147,36 @@ export const DashboardScreen = ({ navigation }: any) => {
                 {/* Weekly Activity Chart */}
                 <Text style={styles.sectionTitle}>Calorias da Semana</Text>
                 <GlassView style={styles.chartCard} intensity={15}>
-                    {weeklyData.length > 0 ? (
-                        {/* <VictoryChart
-                            domainPadding={{ x: 20 }}
-                            width={width - 64} // padding adjusted
-                            height={200}
-                        >
-                            <VictoryAxis
-                                style={{
-                                    axis: { stroke: "transparent" },
-                                    ticks: { stroke: "transparent" },
-                                    tickLabels: { fill: COLORS.textSecondary, fontSize: 10 }
-                                }}
-                            />
-                            <VictoryBar
+                    {weeklyData.labels.length > 0 ? (
+                        <View style={{ paddingTop: 10, alignItems: 'center' }}>
+                            <BarChart
+                                // @ts-ignore
                                 data={weeklyData}
-                                x="day"
-                                y="calories"
-                                style={{
-                                    data: { fill: COLORS.primary, width: 20, rx: 5 },
+                                width={width - 50}
+                                height={200}
+                                yAxisLabel=""
+                                yAxisSuffix=""
+                                chartConfig={{
+                                    backgroundColor: 'transparent',
+                                    backgroundGradientFrom: '#fff',
+                                    backgroundGradientFromOpacity: 0,
+                                    backgroundGradientTo: '#fff',
+                                    backgroundGradientToOpacity: 0,
+                                    color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
+                                    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                    barPercentage: 0.5,
+                                    decimalPlaces: 0,
                                 }}
-                                animate={{
-                                    duration: 1000,
-                                    onLoad: { duration: 500 }
-                                }}
-                                cornerRadius={{ top: 4, bottom: 4 }}
+                                fromZero
+                                showBarTops={false}
+                                showValuesOnTopOfBars={false}
+                                style={{ borderRadius: 16 }}
                             />
-                        </VictoryChart> */}
-                        < View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ color: COLORS.textSecondary }}>Gráfico em manutenção</Text>
-                </View>
-                ) : (
-                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: COLORS.textSecondary }}>Sem dados ainda</Text>
-                </View>
-                    )}
-            </GlassView>
+                        </View>
+                    ) : null}
+                </GlassView>
 
-        </ScrollView>
+            </ScrollView>
         </Screen >
     );
 };

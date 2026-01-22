@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
+import { LineChart } from 'react-native-chart-kit';
 import { Plus } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 import { UserRepository } from '../../services/UserRepository';
@@ -14,22 +14,22 @@ const { width } = Dimensions.get('window');
 
 export const WeightScreen = ({ navigation }: any) => {
     const { currentUser } = useUser();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<any>({ labels: [], datasets: [] });
 
     const loadData = async () => {
         if (!currentUser) return;
         try {
             const logs = await UserRepository.getWeightLogs(currentUser.id);
             // Sort by date ascending for chart
-            const sortedLogs = [...logs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const sortedLogs = [...(logs || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-            const chartData = sortedLogs.map(log => ({
-                date: format(new Date(log.date), 'MM/dd'),
-                weight: log.weight,
-                fullDate: log.date
-            }));
+            const labels = sortedLogs.map(log => format(new Date(log.date), 'MM/dd'));
+            const dataValues = sortedLogs.map(log => log.weight);
 
-            setData(chartData);
+            setData({
+                labels: labels,
+                datasets: [{ data: dataValues }]
+            });
         } catch (e) {
             console.error(e);
         }
@@ -55,40 +55,41 @@ export const WeightScreen = ({ navigation }: any) => {
             </View>
 
             <View style={styles.chartContainer}>
-                {data.length > 0 ? (
-                    <VictoryChart
-                        domainPadding={{ x: 20 }}
-                        width={width}
-                        height={250}
-                    >
-                        <VictoryAxis
-                            style={{
-                                axis: { stroke: "transparent" },
-                                ticks: { stroke: "transparent" },
-                                tickLabels: { fill: COLORS.textSecondary, fontSize: 10 }
-                            }}
-                        />
-                        <VictoryLine
+                {data.labels && data.labels.length > 0 ? (
+                    <View style={{ paddingTop: 20, alignItems: 'center' }}>
+                        <LineChart
+                            // @ts-ignore
                             data={data}
-                            x="date"
-                            y="weight"
-                            interpolation="catmullRom"
+                            width={width - 20}
+                            height={220}
+                            yAxisLabel=""
+                            yAxisSuffix="kg"
+                            yAxisInterval={1}
+                            chartConfig={{
+                                backgroundColor: 'transparent',
+                                backgroundGradientFrom: '#fff',
+                                backgroundGradientFromOpacity: 0,
+                                backgroundGradientTo: '#fff',
+                                backgroundGradientToOpacity: 0,
+                                decimalPlaces: 1,
+                                color: (opacity = 1) => `rgba(236, 72, 153, ${opacity})`,
+                                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                                style: {
+                                    borderRadius: 16
+                                },
+                                propsForDots: {
+                                    r: "6",
+                                    strokeWidth: "2",
+                                    stroke: COLORS.secondary
+                                }
+                            }}
+                            bezier
                             style={{
-                                data: { stroke: COLORS.secondary, strokeWidth: 3 },
-                            }}
-                            animate={{
-                                duration: 2000,
-                                onLoad: { duration: 1000 }
+                                borderRadius: 16,
+                                paddingRight: 40 // fix right clip
                             }}
                         />
-                        <VictoryScatter
-                            data={data}
-                            x="date"
-                            y="weight"
-                            size={5}
-                            style={{ data: { fill: COLORS.white } }}
-                        />
-                    </VictoryChart>
+                    </View>
                 ) : (
                     <View style={styles.emptyChart}>
                         <Text style={styles.emptyText}>Sem dados de peso ainda</Text>

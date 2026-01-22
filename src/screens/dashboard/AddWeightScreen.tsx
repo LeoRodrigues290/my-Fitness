@@ -7,11 +7,13 @@ import { GlassView } from '../../components/ui/GlassView';
 import { X } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 import { UserRepository } from '../../services/UserRepository';
-import { SuccessModal } from '../../components/ui/SuccessModal';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { format } from 'date-fns';
 
 export const AddWeightScreen = ({ navigation }: any) => {
     const { currentUser } = useUser();
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [showDatePicker, setShowDatePicker] = useState(false);
     const [weight, setWeight] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -45,14 +47,26 @@ export const AddWeightScreen = ({ navigation }: any) => {
             <View style={styles.content}>
                 <Text style={styles.label}>Data</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={date}
-                        onChangeText={setDate}
-                        placeholder="YYYY-MM-DD"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
+                    <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                        <Text style={[styles.input, { paddingTop: SPACING.m }]}>
+                            {format(new Date(date), 'dd/MM/yyyy')}
+                        </Text>
+                    </TouchableOpacity>
                 </GlassView>
+
+                {showDatePicker && (
+                    <DateTimePicker
+                        value={new Date(date)}
+                        mode="date"
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                            setShowDatePicker(false);
+                            if (selectedDate) {
+                                setDate(selectedDate.toISOString().split('T')[0]);
+                            }
+                        }}
+                    />
+                )}
 
                 <Text style={styles.label}>Peso (kg)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
