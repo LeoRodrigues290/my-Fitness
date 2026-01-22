@@ -1,22 +1,33 @@
 export const COLORS = {
-    primary: '#8B5CF6',    // Violet
-    secondary: '#EC4899',  // Pink
-    accent: '#F59E0B',     // Amber
-    success: '#10B981',    // Emerald
-    danger: '#EF4444',     // Red
-    background: '#0F172A', // Slate 900
-    surface: '#1E293B',    // Slate 800
-    text: '#F8FAFC',       // Slate 50
-    textSecondary: '#94A3B8', // Slate 400
-    border: '#334155',     // Slate 700
-    white: '#FFFFFF',
-    black: '#000000',
+    // Base Colors
+    primary: '#a3e635', // lime-400
+    secondary: '#8b5cf6', // violet-500 (keeping for some accents?) -> maybe switch to blue as per screenshot?
+    // Let's keep existing secondary for now but add specific ones
+    lime: '#a3e635',
+    blue: '#60a5fa', // blue-400
+    purple: '#c084fc', // purple-400
 
+    // Backgrounds (Slate)
+    background: '#020617', // slate-950
+    card: '#1e293b', // slate-800
+    cardBorder: '#334155', // slate-700
+
+    // Text
+    white: '#ffffff',
+    textSecondary: '#94a3b8', // slate-400
+
+    // Status
+    success: '#a3e635', // lime-400
+    error: '#ef4444',
+    warning: '#f59e0b',
+    accent: '#f97316', // orange
+
+    // Gradients
     gradients: {
-        primary: ['#8B5CF6', '#EC4899'] as const,
-        secondary: ['#3B82F6', '#8B5CF6'] as const,
-        success: ['#10B981', '#34D399'] as const,
-        card: ['rgba(30, 41, 59, 0.7)', 'rgba(30, 41, 59, 0.4)'] as const,
+        primary: ['#a3e635', '#bef264'] as const,
+        secondary: ['#60a5fa', '#93c5fd'] as const,
+        card: ['rgba(30, 41, 59, 0.7)', 'rgba(30, 41, 59, 0.4)'] as const, // Slate glass
+        dark: ['#0f172a', '#020617'] as const,
     },
 
     overlay: {

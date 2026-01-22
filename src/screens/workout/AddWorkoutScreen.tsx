@@ -4,9 +4,10 @@ import { Screen } from '../../components/ui/Screen';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { GlassView } from '../../components/ui/GlassView';
-import { X, Plus, Trash2 } from 'lucide-react-native';
+import { X, Plus, Trash2, Dumbbell } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 import { WorkoutRepository } from '../../services/WorkoutRepository';
+import { CustomAlert } from '../../components/ui/CustomAlert';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 
@@ -18,7 +19,7 @@ export const AddWorkoutScreen = ({ navigation }: any) => {
     const [exercises, setExercises] = useState([
         { name: '', sets: '', reps: '', weight: '' }
     ]);
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<any>({ visible: false, title: '', message: '', type: 'success' });
 
     const addExercise = () => {
         setExercises([...exercises, { name: '', sets: '', reps: '', weight: '' }]);
@@ -41,7 +42,12 @@ export const AddWorkoutScreen = ({ navigation }: any) => {
         if (!currentUser) return;
 
         if (!muscleGroup || exercises.some(e => !e.name)) {
-            alert('Por favor, preencha o grupo muscular e os nomes dos exercícios');
+            setAlertConfig({
+                visible: true,
+                title: 'Erro de Validação',
+                message: 'Por favor, preencha o grupo muscular e os nomes dos exercícios',
+                type: 'error'
+            });
             return;
         }
 
@@ -60,15 +66,26 @@ export const AddWorkoutScreen = ({ navigation }: any) => {
             formattedExercises
         );
 
-        setShowSuccess(true);
+        setAlertConfig({
+            visible: true,
+            title: 'Sucesso',
+            message: 'Treino registrado com sucesso!',
+            type: 'success',
+            onClose: () => {
+                setAlertConfig({ ...alertConfig, visible: false });
+                navigation.goBack();
+            }
+        });
     };
 
     return (
         <Screen style={{ paddingTop: 0 }}>
-            <SuccessModal
-                visible={showSuccess}
-                message="Treino Registrado!"
-                onClose={() => navigation.goBack()}
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => alertConfig.onClose ? alertConfig.onClose() : setAlertConfig({ ...alertConfig, visible: false })}
             />
 
             <View style={styles.header}>
@@ -104,13 +121,16 @@ export const AddWorkoutScreen = ({ navigation }: any) => {
 
                 <Text style={styles.label}>Grupo Muscular</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={muscleGroup}
-                        onChangeText={setMuscleGroup}
-                        placeholder="ex: Peito, Pernas"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Dumbbell color={COLORS.primary} size={20} style={{ marginLeft: SPACING.m }} />
+                        <TextInput
+                            style={[styles.input, { flex: 1 }]}
+                            value={muscleGroup}
+                            onChangeText={setMuscleGroup}
+                            placeholder="ex: Peito, Pernas"
+                            placeholderTextColor={COLORS.textSecondary}
+                        />
+                    </View>
                 </GlassView>
 
                 <Text style={[styles.label, { marginTop: SPACING.l }]}>Exercícios</Text>

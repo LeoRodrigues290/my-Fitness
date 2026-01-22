@@ -14,7 +14,7 @@ interface GlassViewProps {
 export const GlassView: React.FC<GlassViewProps> = ({
     children,
     style,
-    intensity = 20,
+    intensity = 10,
     tint = 'dark',
     gradientBorder = false
 }) => {

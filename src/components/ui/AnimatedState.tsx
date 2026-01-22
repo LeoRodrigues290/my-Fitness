@@ -11,7 +11,7 @@ interface AnimatedStateProps {
     style?: ViewStyle;
 }
 
-export const AnimatedState: React.FC<AnimatedStateProps> = ({ icon: Icon, color = COLORS.primary, size = 48, style }) => {
+export const AnimatedState: React.FC<AnimatedStateProps> = ({ icon: Icon, color = COLORS.primary, size = 24, style }) => {
     const scale = useSharedValue(1);
     const opacity = useSharedValue(0.5);
 
@@ -55,20 +55,20 @@ const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        width: 100,
-        height: 100,
+        width: 40,
+        height: 40,
     },
     circle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
     },
     innerCircle: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
     }
 });

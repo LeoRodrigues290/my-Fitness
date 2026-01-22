@@ -4,9 +4,10 @@ import { Screen } from '../../components/ui/Screen';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { GlassView } from '../../components/ui/GlassView';
-import { X } from 'lucide-react-native';
+import { X, Scale } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 import { UserRepository } from '../../services/UserRepository';
+import { CustomAlert } from '../../components/ui/CustomAlert';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 
@@ -15,7 +16,7 @@ export const AddWeightScreen = ({ navigation }: any) => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [weight, setWeight] = useState('');
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<any>({ visible: false, title: '', message: '', type: 'success' });
 
     const handleSave = async () => {
         if (!currentUser || !weight) return;
@@ -26,15 +27,26 @@ export const AddWeightScreen = ({ navigation }: any) => {
             date
         );
 
-        setShowSuccess(true);
+        setAlertConfig({
+            visible: true,
+            title: 'Sucesso',
+            message: 'Peso registrado com sucesso!',
+            type: 'success',
+            onClose: () => {
+                setAlertConfig({ ...alertConfig, visible: false });
+                navigation.goBack();
+            }
+        });
     };
 
     return (
         <Screen style={{ paddingTop: 0 }}>
-            <SuccessModal
-                visible={showSuccess}
-                message="Peso Registrado!"
-                onClose={() => navigation.goBack()}
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => alertConfig.onClose ? alertConfig.onClose() : setAlertConfig({ ...alertConfig, visible: false })}
             />
 
             <View style={styles.header}>
@@ -70,14 +82,17 @@ export const AddWeightScreen = ({ navigation }: any) => {
 
                 <Text style={styles.label}>Peso (kg)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={weight}
-                        onChangeText={setWeight}
-                        keyboardType="numeric"
-                        placeholder="0.0"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Scale color={COLORS.primary} size={20} style={{ marginLeft: SPACING.m }} />
+                        <TextInput
+                            style={[styles.input, { flex: 1 }]}
+                            value={weight}
+                            onChangeText={setWeight}
+                            keyboardType="numeric"
+                            placeholder="0.0"
+                            placeholderTextColor={COLORS.textSecondary}
+                        />
+                    </View>
                 </GlassView>
 
                 <GradientButton title="Salvar" onPress={handleSave} style={{ marginTop: SPACING.l }} />

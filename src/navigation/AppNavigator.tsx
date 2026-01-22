@@ -7,6 +7,10 @@ import { MainTabNavigator } from './MainTabNavigator';
 import { AddWorkoutScreen } from '../screens/workout/AddWorkoutScreen';
 import { AddWeightScreen } from '../screens/dashboard/AddWeightScreen';
 import { AddMealScreen } from '../screens/nutrition/AddMealScreen';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
+import { GoalsScreen } from '../screens/settings/GoalsScreen';
+import { RoutineSettingsScreen } from '../screens/settings/RoutineSettingsScreen';
+import { CalendarScreen } from '../screens/dashboard/CalendarScreen';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../constants/theme';
 
@@ -55,6 +59,51 @@ export const AppNavigator = () => {
                             options={{
                                 presentation: 'modal',
                                 animation: 'slide_from_bottom',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Settings"
+                            component={SettingsScreen}
+                            options={{
+                                presentation: 'modal',
+                                animation: 'slide_from_right',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Goals"
+                            component={GoalsScreen}
+                            options={{
+                                presentation: 'card',
+                                animation: 'slide_from_right',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="RoutineSettings"
+                            component={RoutineSettingsScreen}
+                            options={{
+                                presentation: 'card',
+                                animation: 'slide_from_right',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Calendar"
+                            component={CalendarScreen}
+                            options={{
+                                presentation: 'fullScreenModal',
+                                animation: 'slide_from_bottom',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="ProfileSelection"
+                            component={ProfileSelectionScreen}
+                            options={{
+                                presentation: 'modal',
+                                animation: 'fade',
                                 headerShown: false
                             }}
                         />

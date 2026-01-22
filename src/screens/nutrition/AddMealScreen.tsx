@@ -4,10 +4,11 @@ import { Screen } from '../../components/ui/Screen';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { GlassView } from '../../components/ui/GlassView';
-import { X, Search } from 'lucide-react-native';
+
 import { useUser } from '../../context/UserContext';
 import { NutritionRepository } from '../../services/NutritionRepository';
-import { SuccessModal } from '../../components/ui/SuccessModal';
+import { CustomAlert } from '../../components/ui/CustomAlert';
+import { X, Search, Utensils, Flame } from 'lucide-react-native';
 
 export const AddMealScreen = ({ navigation }: any) => {
     const { currentUser } = useUser();
@@ -21,7 +22,7 @@ export const AddMealScreen = ({ navigation }: any) => {
     const [carbs, setCarbs] = useState('');
     const [fats, setFats] = useState('');
     const [type, setType] = useState('Café da Manhã');
-    const [showSuccess, setShowSuccess] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<any>({ visible: false, title: '', message: '', type: 'success' });
 
     const mealTypes = ['Café da Manhã', 'Almoço', 'Jantar', 'Lanche'];
 
@@ -77,7 +78,16 @@ export const AddMealScreen = ({ navigation }: any) => {
             parseFloat(fats) || 0
         );
 
-        setShowSuccess(true);
+        setAlertConfig({
+            visible: true,
+            title: 'Sucesso',
+            message: 'Refeição registrada com sucesso!',
+            type: 'success',
+            onClose: () => {
+                setAlertConfig({ ...alertConfig, visible: false });
+                navigation.goBack();
+            }
+        });
     };
 
     const renderSearchResult = ({ item }: any) => (
@@ -92,10 +102,12 @@ export const AddMealScreen = ({ navigation }: any) => {
 
     return (
         <Screen style={{ paddingTop: 0 }}>
-            <SuccessModal
-                visible={showSuccess}
-                message="Refeição Registrada!"
-                onClose={() => navigation.goBack()}
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => alertConfig.onClose ? alertConfig.onClose() : setAlertConfig({ ...alertConfig, visible: false })}
             />
 
             <View style={styles.header}>
@@ -144,25 +156,31 @@ export const AddMealScreen = ({ navigation }: any) => {
 
                 <Text style={styles.label}>Nome da Refeição (Editável)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Nome final do prato"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Utensils color={COLORS.primary} size={20} style={{ marginLeft: SPACING.m }} />
+                        <TextInput
+                            style={[styles.input, { flex: 1 }]}
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="Nome final do prato"
+                            placeholderTextColor={COLORS.textSecondary}
+                        />
+                    </View>
                 </GlassView>
 
                 <Text style={styles.label}>Calorias (kcal)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={calories}
-                        onChangeText={setCalories}
-                        keyboardType="numeric"
-                        placeholder="0"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Flame color={COLORS.warning} size={20} style={{ marginLeft: SPACING.m }} />
+                        <TextInput
+                            style={[styles.input, { flex: 1 }]}
+                            value={calories}
+                            onChangeText={setCalories}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={COLORS.textSecondary}
+                        />
+                    </View>
                 </GlassView>
 
                 <View style={styles.row}>
