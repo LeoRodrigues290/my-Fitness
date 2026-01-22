@@ -45,10 +45,13 @@ export const UserRepository = {
         if (sortedDates.length === 0) return 0;
 
         // Check if streak is active (activity today or yesterday)
-        const today = new Date().toISOString().split('T')[0];
+        // Fix: Use local date to prevent timezone issues (UTC vs Local)
+        const now = new Date();
+        const today = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterday = yesterdayDate.toISOString().split('T')[0];
+        const yesterday = yesterdayDate.toLocaleDateString('en-CA'); // YYYY-MM-DD local
 
         if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
             return 0;
