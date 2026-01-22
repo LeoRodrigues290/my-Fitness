@@ -21,7 +21,7 @@ export const WeightScreen = ({ navigation }: any) => {
         try {
             const logs = await UserRepository.getWeightLogs(currentUser.id);
             // Sort by date ascending for chart
-            const sortedLogs = [...(logs || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const sortedLogs = [...(logs || [] as Array<{date: string, weight: number}>)].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
             const labels = sortedLogs.map(log => format(new Date(log.date), 'MM/dd'));
             const dataValues = sortedLogs.map(log => log.weight);

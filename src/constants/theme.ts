@@ -1,8 +1,7 @@
 export const COLORS = {
     // Base Colors
     primary: '#a3e635', // lime-400
-    secondary: '#8b5cf6', // violet-500 (keeping for some accents?) -> maybe switch to blue as per screenshot?
-    // Let's keep existing secondary for now but add specific ones
+    secondary: '#8b5cf6', // violet-500
     lime: '#a3e635',
     blue: '#60a5fa', // blue-400
     purple: '#c084fc', // purple-400
@@ -11,14 +10,18 @@ export const COLORS = {
     background: '#020617', // slate-950
     card: '#1e293b', // slate-800
     cardBorder: '#334155', // slate-700
+    surface: '#0f172a', // slate-900
+    border: '#334155', // slate-700
 
     // Text
     white: '#ffffff',
+    black: '#000000',
     textSecondary: '#94a3b8', // slate-400
 
     // Status
     success: '#a3e635', // lime-400
     error: '#ef4444',
+    danger: '#ef4444', // alias for error
     warning: '#f59e0b',
     accent: '#f97316', // orange
 
@@ -26,7 +29,7 @@ export const COLORS = {
     gradients: {
         primary: ['#a3e635', '#bef264'] as const,
         secondary: ['#60a5fa', '#93c5fd'] as const,
-        card: ['rgba(30, 41, 59, 0.7)', 'rgba(30, 41, 59, 0.4)'] as const, // Slate glass
+        card: ['rgba(30, 41, 59, 0.7)', 'rgba(30, 41, 59, 0.4)'] as const,
         dark: ['#0f172a', '#020617'] as const,
     },
 
@@ -55,7 +58,7 @@ export const RADIUS = {
 };
 
 export const FONTS = {
-    regular: 'Inter-Regular', // Need to load these or use system fonts if not available
+    regular: 'Inter-Regular',
     medium: 'Inter-Medium',
     bold: 'Inter-Bold',
 };

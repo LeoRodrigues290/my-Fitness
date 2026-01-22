@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,10 +16,32 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onEnter }) => {
     const { users } = useUser();
     const [quote, setQuote] = useState('');
+    const [displayedQuote, setDisplayedQuote] = useState('');
     const [streak, setStreak] = useState(0);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        setQuote(getRandomQuote());
+        const fullQuote = getRandomQuote();
+        setQuote(fullQuote);
+
+        // Typing animation effect
+        let index = 0;
+        setDisplayedQuote('');
+        const timer = setInterval(() => {
+            if (index < fullQuote.length) {
+                setDisplayedQuote(fullQuote.substring(0, index + 1));
+                index++;
+            } else {
+                clearInterval(timer);
+            }
+        }, 40); // 40ms per character for smooth effect
+
+        // Fade in animation
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+        }).start();
 
         const loadStreak = async () => {
             if (users && users.length > 0) {
@@ -32,32 +54,35 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onEnter }) => {
             }
         };
         loadStreak();
+
+        return () => clearInterval(timer);
     }, [users]);
 
     return (
         <View style={styles.container}>
-            {/* Background Image */}
+            {/* Background Image - Improved visibility */}
             <View style={StyleSheet.absoluteFill}>
                 <Image
                     source={{ uri: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop" }}
                     style={styles.backgroundImage}
                 />
+                {/* Lighter gradient for better image visibility */}
                 <LinearGradient
-                    colors={['#020617', 'rgba(2, 6, 23, 0.8)', '#020617']}
+                    colors={['rgba(2, 6, 23, 0.4)', 'rgba(2, 6, 23, 0.6)', 'rgba(2, 6, 23, 0.9)']}
                     style={StyleSheet.absoluteFill}
                 />
             </View>
 
             <SafeAreaView style={styles.safeArea}>
                 {/* App Logo/Icon */}
-                <View style={styles.logoContainer}>
+                <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
                     <View style={styles.logoBox}>
                         <Dumbbell size={40} color={colors.slate900} fill={colors.slate900} />
                     </View>
-                </View>
+                </Animated.View>
 
-                {/* Glass Card */}
-                <BlurView intensity={30} tint="light" style={styles.glassCard}>
+                {/* Glass Card with enhanced blur */}
+                <BlurView intensity={60} tint="dark" style={styles.glassCard}>
                     <Text style={styles.welcomeText}>Bem-vindo de volta!</Text>
 
                     {/* Streak Counter */}
@@ -66,9 +91,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onEnter }) => {
                         <Text style={styles.streakText}>{streak} dias seguidos</Text>
                     </View>
 
-                    {/* Quote */}
+                    {/* Quote - Enhanced prominence with typing effect */}
                     <View style={styles.quoteContainer}>
-                        <Text style={styles.quoteText}>"{quote}"</Text>
+                        <Text style={styles.quoteLabel}>💪 MOTIVAÇÃO DO DIA</Text>
+                        <View style={styles.quoteBox}>
+                            <Text style={styles.quoteText}>"{displayedQuote}"</Text>
+                            <View style={styles.cursor} />
+                        </View>
                     </View>
 
                     {/* Action Button */}
@@ -91,16 +120,16 @@ const styles = StyleSheet.create({
     backgroundImage: {
         width: '100%',
         height: '100%',
-        opacity: 0.6,
+        opacity: 0.85, // Increased from 0.6 for better visibility
     },
     safeArea: {
-        paddingHorizontal: 32,
+        paddingHorizontal: 24,
         alignItems: 'center',
         justifyContent: 'center',
         height: '100%',
     },
     logoContainer: {
-        marginBottom: 40,
+        marginBottom: 32,
         alignItems: 'center',
     },
     logoBox: {
@@ -110,52 +139,83 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 24,
         shadowColor: colors.lime400,
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 30,
+        shadowOpacity: 0.6,
+        shadowRadius: 40,
+        elevation: 10,
     },
     glassCard: {
         width: '100%',
-        padding: 32,
-        borderRadius: 32,
-        backgroundColor: 'rgba(30, 41, 59, 0.3)',
+        padding: 28,
+        borderRadius: 28,
+        backgroundColor: 'rgba(15, 23, 42, 0.5)', // Darker glass for better contrast
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(255,255,255,0.15)',
         alignItems: 'center',
         overflow: 'hidden',
     },
     welcomeText: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: 'bold',
         color: colors.white,
-        marginBottom: 24,
+        marginBottom: 20,
     },
     streakContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
-        marginBottom: 32,
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        paddingHorizontal: 20,
+        gap: 10,
+        marginBottom: 24,
+        backgroundColor: 'rgba(251, 146, 60, 0.15)', // Orange tint
+        paddingHorizontal: 18,
         paddingVertical: 10,
         borderRadius: 100,
+        borderWidth: 1,
+        borderColor: 'rgba(251, 146, 60, 0.3)',
     },
     streakText: {
-        color: colors.white,
-        fontSize: 18,
+        color: colors.orange400,
+        fontSize: 16,
         fontWeight: 'bold',
     },
     quoteContainer: {
-        marginBottom: 40,
+        marginBottom: 28,
+        width: '100%',
+        alignItems: 'center',
+    },
+    quoteLabel: {
+        color: colors.lime400,
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 2,
+        marginBottom: 12,
+    },
+    quoteBox: {
+        backgroundColor: 'rgba(163, 230, 53, 0.08)', // Subtle lime tint
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(163, 230, 53, 0.2)',
+        width: '100%',
+        minHeight: 80,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     quoteText: {
-        color: colors.slate300,
-        fontSize: 16,
-        fontStyle: 'italic',
+        color: colors.white,
+        fontSize: 18,
+        fontWeight: '600',
         textAlign: 'center',
-        lineHeight: 24,
+        lineHeight: 28,
+        flex: 1,
+    },
+    cursor: {
+        width: 2,
+        height: 20,
+        backgroundColor: colors.lime400,
+        marginLeft: 2,
+        opacity: 0.8,
     },
     enterButton: {
         width: '100%',
@@ -168,8 +228,9 @@ const styles = StyleSheet.create({
         gap: 8,
         shadowColor: colors.lime400,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 8,
     },
     enterButtonText: {
         color: colors.slate950,

@@ -1,31 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     TouchableOpacity,
     ScrollView,
     Dimensions,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { colors } from '../../constants/colors';
+import { useUser } from '../../context/UserContext';
+import { WeightRepository, WeightEntry } from '../../services/WeightRepository';
+import { DailyStatsRepository, DailyStatsEntry } from '../../services/DailyStatsRepository';
+import { WorkoutSessionRepository } from '../../services/WorkoutSessionRepository';
+import { format, subDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export const StatsScreen: React.FC = () => {
     const insets = useSafeAreaInsets();
-    const [filter, setFilter] = useState('weekly');
+    const { currentUser } = useUser();
+    const [filter, setFilter] = useState<'weekly' | 'monthly'>('weekly');
     const screenWidth = Dimensions.get("window").width;
 
-    // Mock Data for Graphs
-    const weightData = {
-        labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"],
-        datasets: [{ data: [78, 77, 76.5, 75, 74.2, 73] }]
+    const [loading, setLoading] = useState(true);
+    const [weightData, setWeightData] = useState<WeightEntry[]>([]);
+    const [dailyStats, setDailyStats] = useState<DailyStatsEntry[]>([]);
+    const [workoutCount, setWorkoutCount] = useState(0);
+    const [weeklyWorkoutIncrease, setWeeklyWorkoutIncrease] = useState(0);
+
+    useEffect(() => {
+        loadData();
+    }, [currentUser, filter]);
+
+    const loadData = async () => {
+        if (!currentUser) return;
+        setLoading(true);
+
+        try {
+            const days = filter === 'weekly' ? 7 : 30;
+            const endDate = new Date().toISOString().split('T')[0];
+            const startDate = subDays(new Date(), days - 1).toISOString().split('T')[0];
+
+            // Load weight history
+            const weights = await WeightRepository.getWeightHistoryByRange(currentUser.id, startDate, endDate);
+            setWeightData(weights);
+
+            // Load daily stats (calories, macros)
+            const stats = filter === 'weekly'
+                ? await DailyStatsRepository.getWeeklySummary(currentUser.id)
+                : await DailyStatsRepository.getMonthlySummary(currentUser.id);
+            setDailyStats(stats);
+
+            // Load workout count
+            const count = await WorkoutSessionRepository.getSessionCount(currentUser.id, startDate, endDate);
+            setWorkoutCount(count);
+
+            // Calculate weekly increase (compare this week vs last week)
+            if (filter === 'weekly') {
+                const lastWeekStart = subDays(new Date(), 13).toISOString().split('T')[0];
+                const lastWeekEnd = subDays(new Date(), 7).toISOString().split('T')[0];
+                const lastWeekCount = await WorkoutSessionRepository.getSessionCount(currentUser.id, lastWeekStart, lastWeekEnd);
+                setWeeklyWorkoutIncrease(count - lastWeekCount);
+            }
+        } catch (e) {
+            console.error("Failed to load stats", e);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const caloriesData = {
-        labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"],
-        datasets: [{ data: [2100, 2300, 1950, 2200, 2400, 1800, 2000] }]
+    // Calculate weight evolution
+    const weightEvolution = weightData.length >= 2
+        ? (weightData[weightData.length - 1].weight - weightData[0].weight).toFixed(1)
+        : '0';
+
+    // Prepare chart data for weight
+    const weightChartData = {
+        labels: weightData.length > 0
+            ? weightData.slice(-7).map(w => format(new Date(w.date), 'd/M'))
+            : ['--'],
+        datasets: [{
+            data: weightData.length > 0
+                ? weightData.slice(-7).map(w => w.weight)
+                : [0]
+        }]
     };
+
+    // Prepare chart data for calories
+    const caloriesChartData = {
+        labels: dailyStats.length > 0
+            ? dailyStats.slice(-7).map(s => format(new Date(s.date), 'EEE', { locale: ptBR }).substring(0, 3))
+            : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'],
+        datasets: [{
+            data: dailyStats.length > 0
+                ? dailyStats.slice(-7).map(s => s.calories_consumed || 0)
+                : [0, 0, 0, 0, 0, 0, 0]
+        }]
+    };
+
+    // Calculate macro distribution
+    const totalProtein = dailyStats.reduce((sum, s) => sum + (s.protein_consumed || 0), 0);
+    const totalCarbs = dailyStats.reduce((sum, s) => sum + (s.carbs_consumed || 0), 0);
+    const totalFats = dailyStats.reduce((sum, s) => sum + (s.fats_consumed || 0), 0);
+    const totalMacros = totalProtein + totalCarbs + totalFats || 1; // Avoid divide by zero
+
+    const proteinPercent = Math.round((totalProtein / totalMacros) * 100);
+    const carbsPercent = Math.round((totalCarbs / totalMacros) * 100);
+    const fatsPercent = 100 - proteinPercent - carbsPercent;
 
     const chartConfig = {
         backgroundGradientFrom: "#1e293b",
@@ -64,79 +147,107 @@ export const StatsScreen: React.FC = () => {
                 </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {/* Summary Cards */}
-                <View style={styles.summaryRow}>
-                    <View style={styles.summaryCard}>
-                        <Text style={styles.summaryLabel}>TREINOS REALIZADOS</Text>
-                        <Text style={styles.summaryValue}>12</Text>
-                        <Text style={styles.summarySubtext}>+2 essa semana</Text>
-                    </View>
-                    <View style={[styles.summaryCard, styles.summaryCardBlue]}>
-                        <Text style={[styles.summaryLabel, { color: colors.blue400 }]}>EVOLUÇÃO PESO</Text>
-                        <Text style={styles.summaryValue}>-5kg</Text>
-                        <Text style={styles.summarySubtext}>Últimos 6 meses</Text>
-                    </View>
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.lime400} />
                 </View>
-
-                {/* Weight Graph */}
-                <View style={styles.graphSection}>
-                    <Text style={styles.graphTitle}>Evolução de Peso</Text>
-                    <LineChart
-                        data={weightData}
-                        width={screenWidth - 48}
-                        height={220}
-                        chartConfig={{
-                            ...chartConfig,
-                            color: (opacity = 1) => `rgba(96, 165, 250, ${opacity})`,
-                        }}
-                        bezier
-                        style={styles.chart}
-                    />
-                </View>
-
-                {/* Calories Graph */}
-                <View style={styles.graphSection}>
-                    <Text style={styles.graphTitle}>Consumo Calórico Diário</Text>
-                    <BarChart
-                        data={caloriesData}
-                        width={screenWidth - 48}
-                        height={220}
-                        yAxisLabel=""
-                        yAxisSuffix="k"
-                        chartConfig={chartConfig}
-                        style={styles.chart}
-                        verticalLabelRotation={0}
-                    />
-                </View>
-
-                {/* Macro Distribution */}
-                <View style={styles.macroCard}>
-                    <Text style={styles.macroTitle}>Distribuição de Macros (Média)</Text>
-                    <View style={styles.macroRow}>
-                        <View style={styles.macroItem}>
-                            <View style={[styles.macroDot, { backgroundColor: colors.red500 }]} />
-                            <Text style={styles.macroLabel}>Proteína</Text>
-                            <Text style={styles.macroValue}>30%</Text>
+            ) : (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+                    {/* Summary Cards */}
+                    <View style={styles.summaryRow}>
+                        <View style={styles.summaryCard}>
+                            <Text style={styles.summaryLabel}>TREINOS REALIZADOS</Text>
+                            <Text style={styles.summaryValue}>{workoutCount}</Text>
+                            <Text style={styles.summarySubtext}>
+                                {weeklyWorkoutIncrease >= 0 ? '+' : ''}{weeklyWorkoutIncrease} essa semana
+                            </Text>
                         </View>
-                        <View style={styles.macroItem}>
-                            <View style={[styles.macroDot, { backgroundColor: colors.lime400 }]} />
-                            <Text style={styles.macroLabel}>Carbs</Text>
-                            <Text style={styles.macroValue}>45%</Text>
-                        </View>
-                        <View style={styles.macroItem}>
-                            <View style={[styles.macroDot, { backgroundColor: colors.orange400 }]} />
-                            <Text style={styles.macroLabel}>Gordura</Text>
-                            <Text style={styles.macroValue}>25%</Text>
+                        <View style={[styles.summaryCard, styles.summaryCardBlue]}>
+                            <Text style={[styles.summaryLabel, { color: colors.blue400 }]}>EVOLUÇÃO PESO</Text>
+                            <Text style={styles.summaryValue}>
+                                {parseFloat(weightEvolution) > 0 ? '+' : ''}{weightEvolution}kg
+                            </Text>
+                            <Text style={styles.summarySubtext}>
+                                {filter === 'weekly' ? 'Última semana' : 'Último mês'}
+                            </Text>
                         </View>
                     </View>
-                    <View style={styles.macroBar}>
-                        <View style={[styles.macroBarSegment, { flex: 0.3, backgroundColor: colors.red500 }]} />
-                        <View style={[styles.macroBarSegment, { flex: 0.45, backgroundColor: colors.lime400 }]} />
-                        <View style={[styles.macroBarSegment, { flex: 0.25, backgroundColor: colors.orange400 }]} />
+
+                    {/* Weight Graph */}
+                    <View style={styles.graphSection}>
+                        <Text style={styles.graphTitle}>Evolução de Peso</Text>
+                        {weightData.length > 0 ? (
+                            <LineChart
+                                data={weightChartData}
+                                width={screenWidth - 48}
+                                height={220}
+                                chartConfig={{
+                                    ...chartConfig,
+                                    color: (opacity = 1) => `rgba(96, 165, 250, ${opacity})`,
+                                }}
+                                bezier
+                                style={styles.chart}
+                            />
+                        ) : (
+                            <View style={styles.emptyChart}>
+                                <Text style={styles.emptyText}>
+                                    Registre seu peso em Configurações para ver o gráfico
+                                </Text>
+                            </View>
+                        )}
                     </View>
-                </View>
-            </ScrollView>
+
+                    {/* Calories Graph */}
+                    <View style={styles.graphSection}>
+                        <Text style={styles.graphTitle}>Consumo Calórico Diário</Text>
+                        {dailyStats.length > 0 ? (
+                            <BarChart
+                                data={caloriesChartData}
+                                width={screenWidth - 48}
+                                height={220}
+                                yAxisLabel=""
+                                yAxisSuffix=""
+                                chartConfig={chartConfig}
+                                style={styles.chart}
+                                verticalLabelRotation={0}
+                            />
+                        ) : (
+                            <View style={styles.emptyChart}>
+                                <Text style={styles.emptyText}>
+                                    Registre suas refeições para ver o gráfico
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Macro Distribution */}
+                    <View style={styles.macroCard}>
+                        <Text style={styles.macroTitle}>Distribuição de Macros (Média)</Text>
+                        <View style={styles.macroRow}>
+                            <View style={styles.macroItem}>
+                                <View style={[styles.macroDot, { backgroundColor: colors.red500 }]} />
+                                <Text style={styles.macroLabel}>Proteína</Text>
+                                <Text style={styles.macroValue}>{proteinPercent}%</Text>
+                            </View>
+                            <View style={styles.macroItem}>
+                                <View style={[styles.macroDot, { backgroundColor: colors.lime400 }]} />
+                                <Text style={styles.macroLabel}>Carbs</Text>
+                                <Text style={styles.macroValue}>{carbsPercent}%</Text>
+                            </View>
+                            <View style={styles.macroItem}>
+                                <View style={[styles.macroDot, { backgroundColor: colors.orange400 }]} />
+                                <Text style={styles.macroLabel}>Gordura</Text>
+                                <Text style={styles.macroValue}>{fatsPercent}%</Text>
+                            </View>
+                        </View>
+                        <View style={styles.macroBar}>
+                            <View style={[styles.macroBarSegment, { flex: proteinPercent / 100 || 0.33, backgroundColor: colors.red500 }]} />
+                            <View style={[styles.macroBarSegment, { flex: carbsPercent / 100 || 0.34, backgroundColor: colors.lime400 }]} />
+                            <View style={[styles.macroBarSegment, { flex: fatsPercent / 100 || 0.33, backgroundColor: colors.orange400 }]} />
+                        </View>
+                    </View>
+                </ScrollView>
+            )}
         </View>
     );
 };
@@ -179,6 +290,11 @@ const styles = StyleSheet.create({
     },
     filterTextActive: {
         color: colors.white,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     scrollContent: {
         paddingBottom: 100,
@@ -227,6 +343,19 @@ const styles = StyleSheet.create({
     },
     chart: {
         borderRadius: 16,
+    },
+    emptyChart: {
+        height: 180,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        color: colors.slate400,
+        textAlign: 'center',
+        fontSize: 14,
     },
     macroCard: {
         backgroundColor: 'rgba(30, 41, 59, 0.5)',

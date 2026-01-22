@@ -5,7 +5,7 @@ export interface FoodItem {
     protein: number;
     carbs: number;
     fats: number;
-    unit: 'g' | 'ml' | 'unidade';
+    unit: 'g' | 'ml' | 'unidade' | 'colher';
     portion: number; // default portion size in unit
 }
 

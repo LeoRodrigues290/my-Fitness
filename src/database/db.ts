@@ -72,18 +72,20 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Create Meals Table
+    // Create Meals Table (with section for meal type)
     await database.execAsync(`
       CREATE TABLE IF NOT EXISTS meals (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         date TEXT NOT NULL,
-        type TEXT,
-        name TEXT,
-        calories REAL DEFAULT 0,
-        protein REAL DEFAULT 0,
-        carbs REAL DEFAULT 0,
-        fats REAL DEFAULT 0,
+        section TEXT NOT NULL,
+        name TEXT NOT NULL,
+        calories INTEGER DEFAULT 0,
+        protein INTEGER DEFAULT 0,
+        carbs INTEGER DEFAULT 0,
+        fats INTEGER DEFAULT 0,
+        quantity REAL DEFAULT 1,
+        unit TEXT DEFAULT 'g',
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
     `);
@@ -95,6 +97,36 @@ export const initDatabase = async () => {
         day_index INTEGER NOT NULL,
         workout_focus TEXT,
         PRIMARY KEY (user_id, day_index),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `);
+
+    // Create Daily Stats Table (for aggregate daily tracking)
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS daily_stats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        calories_consumed INTEGER DEFAULT 0,
+        protein_consumed INTEGER DEFAULT 0,
+        carbs_consumed INTEGER DEFAULT 0,
+        fats_consumed INTEGER DEFAULT 0,
+        water_consumed INTEGER DEFAULT 0,
+        UNIQUE(user_id, date),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `);
+
+    // Create Workout Sessions Table (completed workouts)
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        workout_id TEXT NOT NULL,
+        workout_title TEXT NOT NULL,
+        duration INTEGER DEFAULT 0,
+        calories_burned INTEGER DEFAULT 0,
         FOREIGN KEY (user_id) REFERENCES users (id)
       );
     `);

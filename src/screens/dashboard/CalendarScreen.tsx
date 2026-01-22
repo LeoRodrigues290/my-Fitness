@@ -1,113 +1,155 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Screen } from '../../components/ui/Screen';
-import { GlassView } from '../../components/ui/GlassView';
-import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Settings, Dumbbell } from 'lucide-react-native';
-import { useUser } from '../../context/UserContext';
-import { RoutineRepository } from '../../services/RoutineRepository';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { ChevronLeft, ChevronRight, Settings, Dumbbell, Moon, ArrowLeft } from 'lucide-react-native';
+import { useUser, WeekSchedule } from '../../context/UserContext';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { GradientButton } from '../../components/ui/GradientButton';
+import { colors } from '../../constants/colors';
+import { getWorkoutById, workoutOptions } from '../../constants/workouts';
 
 const { width } = Dimensions.get('window');
 
-export const CalendarScreen = ({ navigation }: any) => {
-    const { currentUser } = useUser();
+// Map day index (0=Sun) to schedule key
+const DAY_INDEX_TO_KEY: (keyof WeekSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// Get workout label from ID
+const getWorkoutLabel = (workoutId: string): string => {
+    const option = workoutOptions.find(o => o.value === workoutId);
+    return option?.label || workoutId;
+};
+
+interface CalendarScreenProps {
+    onBack: () => void;
+    onOpenSettings?: () => void;
+}
+
+export const CalendarScreen: React.FC<CalendarScreenProps> = ({ onBack, onOpenSettings }) => {
+    const insets = useSafeAreaInsets();
+    const { userPreferences } = useUser();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [routine, setRoutine] = useState<any[]>([]);
-
-    useEffect(() => {
-        if (currentUser) {
-            RoutineRepository.getWeeklyRoutine(currentUser.id).then(setRoutine);
-        }
-    }, [currentUser]);
 
     const daysInMonth = eachDayOfInterval({
         start: startOfMonth(currentDate),
         end: endOfMonth(currentDate)
     });
 
-    const startDay = getDay(startOfMonth(currentDate)); // 0=Sun
+    const startDay = getDay(startOfMonth(currentDate));
     const emptyDays = Array(startDay).fill(null);
 
-    const getWorkoutForDate = (date: Date) => {
-        const dayIndex = getDay(date); // 0=Sun
-        return routine.find(r => r.day_index === dayIndex);
+    // Get workout for a date based on userPreferences.schedule
+    const getWorkoutForDate = (date: Date): { id: string; label: string; isRest: boolean } => {
+        const dayIndex = getDay(date); // 0=Sun, 1=Mon, etc
+        const dayKey = DAY_INDEX_TO_KEY[dayIndex];
+        const workoutId = userPreferences.schedule[dayKey];
+        const isRest = workoutId === 'rest';
+        return {
+            id: workoutId,
+            label: getWorkoutLabel(workoutId),
+            isRest
+        };
     };
 
     const selectedWorkout = getWorkoutForDate(selectedDate);
 
     return (
-        <Screen>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <ChevronLeft color={COLORS.white} size={24} />
-                </TouchableOpacity>
-                <Text style={styles.title}>Calendário</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Settings', { screen: 'Routine' })} style={styles.backBtn}>
-                    <Settings color={COLORS.lime} size={24} />
-                </TouchableOpacity>
+        <View style={styles.container}>
+            {/* Background Gradient Glows */}
+            <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+                    <Defs>
+                        <RadialGradient id="grad1" cx="0%" cy="0%" rx="60%" ry="60%">
+                            <Stop offset="0%" stopColor={colors.lime400} stopOpacity="0.12" />
+                            <Stop offset="100%" stopColor={colors.slate950} stopOpacity="0" />
+                        </RadialGradient>
+                        <RadialGradient id="grad2" cx="100%" cy="100%" rx="50%" ry="50%">
+                            <Stop offset="0%" stopColor={colors.blue400} stopOpacity="0.1" />
+                            <Stop offset="100%" stopColor={colors.slate950} stopOpacity="0" />
+                        </RadialGradient>
+                    </Defs>
+                    <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad1)" />
+                    <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad2)" />
+                </Svg>
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
+            {/* Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+                <TouchableOpacity onPress={onBack} style={styles.iconButton}>
+                    <ArrowLeft color={colors.white} size={22} />
+                </TouchableOpacity>
+                <Text style={styles.title}>Calendário</Text>
+                {onOpenSettings ? (
+                    <TouchableOpacity onPress={onOpenSettings} style={styles.iconButton}>
+                        <Settings color={colors.lime400} size={22} />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 40 }} />
+                )}
+            </View>
 
-                {/* Calendar Header */}
-                <View style={styles.monthHeader}>
-                    <TouchableOpacity onPress={() => setCurrentDate(subMonths(currentDate, 1))}>
-                        <ChevronLeft color={COLORS.textSecondary} size={24} />
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Month Navigation */}
+                <BlurView intensity={40} tint="dark" style={styles.monthCard}>
+                    <TouchableOpacity onPress={() => setCurrentDate(subMonths(currentDate, 1))} style={styles.navButton}>
+                        <ChevronLeft color={colors.slate400} size={24} />
                     </TouchableOpacity>
                     <Text style={styles.monthTitle}>
                         {format(currentDate, 'MMMM yyyy', { locale: ptBR })}
                     </Text>
-                    <TouchableOpacity onPress={() => setCurrentDate(addMonths(currentDate, 1))}>
-                        <ChevronRight color={COLORS.textSecondary} size={24} />
+                    <TouchableOpacity onPress={() => setCurrentDate(addMonths(currentDate, 1))} style={styles.navButton}>
+                        <ChevronRight color={colors.slate400} size={24} />
                     </TouchableOpacity>
-                </View>
+                </BlurView>
 
-                {/* Week Days */}
-                <View style={styles.weekRow}>
-                    {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
-                        <Text key={i} style={styles.weekDayText}>{day}</Text>
-                    ))}
-                </View>
+                {/* Calendar Grid */}
+                <BlurView intensity={30} tint="dark" style={styles.calendarCard}>
+                    {/* Week Days Header */}
+                    <View style={styles.weekRow}>
+                        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, i) => (
+                            <Text key={i} style={styles.weekDayText}>{day}</Text>
+                        ))}
+                    </View>
 
-                {/* Days Grid */}
-                <View style={styles.daysGrid}>
-                    {emptyDays.map((_, i) => (
-                        <View key={`empty-${i}`} style={styles.dayCell} />
-                    ))}
-                    {daysInMonth.map((date, i) => {
-                        const isSelected = isSameDay(date, selectedDate);
-                        const isToday = isSameDay(date, new Date());
-                        const workout = getWorkoutForDate(date);
-                        const hasWorkout = workout && workout.workout_focus !== 'Descanso';
+                    {/* Days Grid */}
+                    <View style={styles.daysGrid}>
+                        {emptyDays.map((_, i) => (
+                            <View key={`empty-${i}`} style={styles.dayCell} />
+                        ))}
+                        {daysInMonth.map((date, i) => {
+                            const isSelected = isSameDay(date, selectedDate);
+                            const isToday = isSameDay(date, new Date());
+                            const workout = getWorkoutForDate(date);
+                            const hasWorkout = !workout.isRest;
 
-                        return (
-                            <TouchableOpacity
-                                key={i}
-                                style={[
-                                    styles.dayCell,
-                                    isSelected && styles.selectedDay,
-                                    isToday && !isSelected && styles.todayCell
-                                ]}
-                                onPress={() => setSelectedDate(date)}
-                            >
-                                <Text style={[
-                                    styles.dayText,
-                                    isSelected && { color: COLORS.background },
-                                    isToday && !isSelected && { color: COLORS.lime }
-                                ]}>
-                                    {format(date, 'd')}
-                                </Text>
-                                {hasWorkout && (
-                                    <View style={[styles.dot, isSelected && { backgroundColor: COLORS.background }]} />
-                                )}
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
+                            return (
+                                <TouchableOpacity
+                                    key={i}
+                                    style={[
+                                        styles.dayCell,
+                                        isSelected && styles.selectedDay,
+                                        isToday && !isSelected && styles.todayCell
+                                    ]}
+                                    onPress={() => setSelectedDate(date)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[
+                                        styles.dayText,
+                                        isSelected && { color: colors.slate950, fontWeight: 'bold' },
+                                        isToday && !isSelected && { color: colors.lime400 }
+                                    ]}>
+                                        {format(date, 'd')}
+                                    </Text>
+                                    {hasWorkout && (
+                                        <View style={[styles.dot, isSelected && { backgroundColor: colors.slate950 }]} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </BlurView>
 
                 {/* Selected Day Details */}
                 <View style={styles.detailsSection}>
@@ -115,154 +157,194 @@ export const CalendarScreen = ({ navigation }: any) => {
                         {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                     </Text>
 
-                    <GlassView style={styles.workoutCard} intensity={20}>
-                        <View style={styles.cardIcon}>
-                            <Dumbbell color={COLORS.lime} size={24} />
+                    <BlurView intensity={50} tint="dark" style={[styles.workoutCard, selectedWorkout.isRest && styles.restCard]}>
+                        <View style={[styles.cardIcon, selectedWorkout.isRest && styles.restIcon]}>
+                            {selectedWorkout.isRest ? (
+                                <Moon color={colors.blue400} size={24} />
+                            ) : (
+                                <Dumbbell color={colors.lime400} size={24} />
+                            )}
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={styles.workoutTitle}>
-                                {selectedWorkout?.workout_focus || 'Descanso'}
+                                {selectedWorkout.label}
                             </Text>
                             <Text style={styles.workoutSubtitle}>
-                                {selectedWorkout?.workout_focus === 'Descanso' ? 'Dia de recuperação' : 'Foco do treino'}
+                                {selectedWorkout.isRest ? 'Dia de recuperação 😴' : 'Foco do treino'}
                             </Text>
                         </View>
-                        {selectedWorkout?.workout_focus !== 'Descanso' && (
-                            <TouchableOpacity
-                                style={styles.playButton}
-                                onPress={() => navigation.navigate('Workouts')} // Or specific workout
-                            >
-                                <ChevronRight color={COLORS.background} size={20} />
-                            </TouchableOpacity>
+                        {!selectedWorkout.isRest && (
+                            <View style={styles.playButton}>
+                                <ChevronRight color={colors.slate950} size={20} />
+                            </View>
                         )}
-                    </GlassView>
-
-                    <GradientButton
-                        title="Configurar Rotina"
-                        onPress={() => navigation.navigate('Settings')}
-                        style={{ marginTop: SPACING.l, opacity: 0.8 }}
-                    />
+                    </BlurView>
                 </View>
-
             </ScrollView>
-        </Screen>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: colors.slate950,
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: SPACING.m,
-        paddingTop: SPACING.l,
+        paddingHorizontal: 20,
+        paddingBottom: 16,
     },
-    backBtn: {
-        padding: SPACING.s,
+    iconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(30, 41, 59, 0.6)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     title: {
-        color: COLORS.white,
-        fontSize: SIZES.h2,
+        color: colors.white,
+        fontSize: 22,
         fontWeight: 'bold',
     },
     content: {
-        padding: SPACING.m,
+        padding: 20,
+        paddingBottom: 40,
     },
-    monthHeader: {
+    monthCard: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.m,
-        paddingHorizontal: SPACING.s,
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        backgroundColor: 'rgba(30, 41, 59, 0.4)',
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden',
     },
-    monthTitle: { // Capitalize first letter
-        color: COLORS.white,
-        fontSize: SIZES.h3,
+    navButton: {
+        padding: 8,
+    },
+    monthTitle: {
+        color: colors.white,
+        fontSize: 18,
         fontWeight: 'bold',
         textTransform: 'capitalize',
+    },
+    calendarCard: {
+        borderRadius: 24,
+        padding: 16,
+        backgroundColor: 'rgba(30, 41, 59, 0.4)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+        marginBottom: 24,
     },
     weekRow: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginBottom: SPACING.s,
+        marginBottom: 8,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.05)',
     },
     weekDayText: {
-        color: COLORS.textSecondary,
-        width: 40,
+        color: colors.slate500,
+        width: (width - 72) / 7,
         textAlign: 'center',
         fontWeight: 'bold',
+        fontSize: 12,
     },
     daysGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: SPACING.xl,
     },
     dayCell: {
-        width: (width - SPACING.m * 2) / 7,
-        height: 48,
+        width: (width - 72) / 7,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 24,
+        borderRadius: 12,
+        marginVertical: 2,
     },
     selectedDay: {
-        backgroundColor: COLORS.lime,
+        backgroundColor: colors.lime400,
     },
     todayCell: {
-        borderWidth: 1,
-        borderColor: COLORS.lime,
+        borderWidth: 1.5,
+        borderColor: colors.lime400,
     },
     dayText: {
-        color: COLORS.white,
+        color: colors.white,
         fontWeight: '500',
+        fontSize: 14,
     },
     dot: {
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: COLORS.lime,
-        marginTop: 4,
+        backgroundColor: colors.lime400,
+        marginTop: 2,
     },
     detailsSection: {
-        marginTop: SPACING.m,
+        marginTop: 8,
     },
     dateLabel: {
-        color: COLORS.textSecondary,
-        fontSize: SIZES.body,
+        color: colors.slate400,
+        fontSize: 14,
         textTransform: 'capitalize',
-        marginBottom: SPACING.m,
+        marginBottom: 16,
+        fontWeight: '500',
     },
     workoutCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: SPACING.m,
-        borderRadius: RADIUS.l,
-        gap: SPACING.m,
+        padding: 20,
+        borderRadius: 20,
+        gap: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(163, 230, 53, 0.2)',
+        backgroundColor: 'rgba(163, 230, 53, 0.05)',
+        overflow: 'hidden',
+    },
+    restCard: {
+        borderColor: 'rgba(96, 165, 250, 0.2)',
+        backgroundColor: 'rgba(96, 165, 250, 0.05)',
     },
     cardIcon: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         backgroundColor: 'rgba(163, 230, 53, 0.15)',
         alignItems: 'center',
         justifyContent: 'center',
     },
+    restIcon: {
+        backgroundColor: 'rgba(96, 165, 250, 0.15)',
+    },
     workoutTitle: {
-        color: COLORS.white,
-        fontSize: SIZES.h3,
+        color: colors.white,
+        fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 4,
     },
     workoutSubtitle: {
-        color: COLORS.textSecondary,
-        fontSize: SIZES.small,
+        color: colors.slate400,
+        fontSize: 13,
     },
     playButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: COLORS.lime,
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: colors.lime400,
         alignItems: 'center',
         justifyContent: 'center',
-    }
+    },
 });

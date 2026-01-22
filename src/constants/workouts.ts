@@ -1,4 +1,4 @@
-import { Workout } from '../types';
+export { Workout } from '../types';
 
 /**
  * Base de dados de treinos padrão
