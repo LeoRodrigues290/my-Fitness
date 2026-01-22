@@ -7,9 +7,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function App() {
+  const [dbReady, setDbReady] = React.useState(false);
+
   useEffect(() => {
-    initDatabase();
+    const setup = async () => {
+      await initDatabase();
+      setDbReady(true);
+    };
+    setup();
   }, []);
+
+  if (!dbReady) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

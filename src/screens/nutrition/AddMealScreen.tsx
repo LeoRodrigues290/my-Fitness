@@ -5,27 +5,49 @@ import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { GlassView } from '../../components/ui/GlassView';
 import { X } from 'lucide-react-native';
+import { useUser } from '../../context/UserContext';
+import { NutritionRepository } from '../../services/NutritionRepository';
+import { SuccessModal } from '../../components/ui/SuccessModal';
 
 export const AddMealScreen = ({ navigation }: any) => {
+    const { currentUser } = useUser();
     const [name, setName] = useState('');
     const [calories, setCalories] = useState('');
     const [protein, setProtein] = useState('');
     const [carbs, setCarbs] = useState('');
     const [fats, setFats] = useState('');
-    const [type, setType] = useState('Breakfast');
+    const [type, setType] = useState('Café da Manhã');
+    const [showSuccess, setShowSuccess] = useState(false);
 
-    const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+    const mealTypes = ['Café da Manhã', 'Almoço', 'Jantar', 'Lanche'];
 
     const handleSave = async () => {
-        // Save to DB
-        console.log('Saving meal', { name, calories, protein, carbs, fats, type });
-        navigation.goBack();
+        if (!currentUser || !name) return;
+
+        await NutritionRepository.addMeal(
+            currentUser.id,
+            new Date().toISOString().split('T')[0],
+            type,
+            name,
+            parseFloat(calories) || 0,
+            parseFloat(protein) || 0,
+            parseFloat(carbs) || 0,
+            parseFloat(fats) || 0
+        );
+
+        setShowSuccess(true);
     };
 
     return (
         <Screen style={{ paddingTop: 0 }}>
+            <SuccessModal
+                visible={showSuccess}
+                message="Refeição Registrada!"
+                onClose={() => navigation.goBack()}
+            />
+
             <View style={styles.header}>
-                <Text style={styles.title}>Log {type}</Text>
+                <Text style={styles.title}>Registrar {type}</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <X color={COLORS.textSecondary} size={24} />
                 </TouchableOpacity>
@@ -44,18 +66,18 @@ export const AddMealScreen = ({ navigation }: any) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.label}>Food Name</Text>
+                <Text style={styles.label}>Nome da Refeição</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
                     <TextInput
                         style={styles.input}
                         value={name}
                         onChangeText={setName}
-                        placeholder="e.g. Grilled Chicken Salad"
+                        placeholder="Ex: Salada de Frango"
                         placeholderTextColor={COLORS.textSecondary}
                     />
                 </GlassView>
 
-                <Text style={styles.label}>Calories (kcal)</Text>
+                <Text style={styles.label}>Calorias (kcal)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
                     <TextInput
                         style={styles.input}
@@ -69,7 +91,7 @@ export const AddMealScreen = ({ navigation }: any) => {
 
                 <View style={styles.row}>
                     <View style={styles.statInput}>
-                        <Text style={styles.label}>Protein (g)</Text>
+                        <Text style={styles.label}>Proteínas (g)</Text>
                         <GlassView style={styles.inputContainer} intensity={10}>
                             <TextInput
                                 style={styles.input}
@@ -82,7 +104,7 @@ export const AddMealScreen = ({ navigation }: any) => {
                         </GlassView>
                     </View>
                     <View style={styles.statInput}>
-                        <Text style={styles.label}>Carbs (g)</Text>
+                        <Text style={styles.label}>Carboidratos (g)</Text>
                         <GlassView style={styles.inputContainer} intensity={10}>
                             <TextInput
                                 style={styles.input}
@@ -95,7 +117,7 @@ export const AddMealScreen = ({ navigation }: any) => {
                         </GlassView>
                     </View>
                     <View style={styles.statInput}>
-                        <Text style={styles.label}>Fats (g)</Text>
+                        <Text style={styles.label}>Gorduras (g)</Text>
                         <GlassView style={styles.inputContainer} intensity={10}>
                             <TextInput
                                 style={styles.input}
@@ -109,7 +131,7 @@ export const AddMealScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                <GradientButton title="Save Meal" onPress={handleSave} style={{ marginTop: SPACING.l }} />
+                <GradientButton title="Salvar Refeição" onPress={handleSave} style={{ marginTop: SPACING.l }} />
             </ScrollView>
         </Screen>
     );

@@ -1,26 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { VictoryChart, VictoryLine, VictoryTheme, VictoryAxis, VictoryScatter } from 'victory-native';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryScatter } from 'victory-native';
 import { Plus } from 'lucide-react-native';
+import { useUser } from '../../context/UserContext';
+import { UserRepository } from '../../services/UserRepository';
+import { format } from 'date-fns';
 
 const { width } = Dimensions.get('window');
 
 export const WeightScreen = ({ navigation }: any) => {
-    // Mock Data
-    const data = [
-        { date: '10/01', weight: 78.0 },
-        { date: '10/08', weight: 77.5 },
-        { date: '10/15', weight: 76.8 },
-        { date: '10/22', weight: 76.2 },
-        { date: '10/29', weight: 75.5 },
-    ];
+    const { currentUser } = useUser();
+    const [data, setData] = useState<any[]>([]);
+
+    const loadData = async () => {
+        if (!currentUser) return;
+        try {
+            const logs = await UserRepository.getWeightLogs(currentUser.id);
+            // Sort by date ascending for chart
+            const sortedLogs = [...logs].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+            const chartData = sortedLogs.map(log => ({
+                date: format(new Date(log.date), 'MM/dd'),
+                weight: log.weight,
+                fullDate: log.date
+            }));
+
+            setData(chartData);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [currentUser])
+    );
 
     const renderItem = ({ item }: any) => (
         <GlassView style={styles.row} intensity={10}>
-            <Text style={styles.date}>{item.date}</Text>
+            <Text style={styles.date}>{item.fullDate}</Text>
             <Text style={styles.weight}>{item.weight} kg</Text>
         </GlassView>
     );
@@ -28,50 +51,56 @@ export const WeightScreen = ({ navigation }: any) => {
     return (
         <Screen>
             <View style={styles.header}>
-                <Text style={styles.title}>Weight Progress</Text>
+                <Text style={styles.title}>Progresso de Peso</Text>
             </View>
 
             <View style={styles.chartContainer}>
-                <VictoryChart
-                    theme={VictoryTheme.material}
-                    domainPadding={{ x: 20 }}
-                    width={width}
-                    height={250}
-                >
-                    <VictoryAxis
-                        style={{
-                            axis: { stroke: "transparent" },
-                            ticks: { stroke: "transparent" },
-                            tickLabels: { fill: COLORS.textSecondary, fontSize: 10 }
-                        }}
-                    />
-                    <VictoryLine
-                        data={data}
-                        x="date"
-                        y="weight"
-                        style={{
-                            data: { stroke: COLORS.secondary, strokeWidth: 3 },
-                        }}
-                        animate={{
-                            duration: 2000,
-                            onLoad: { duration: 1000 }
-                        }}
-                    />
-                    <VictoryScatter
-                        data={data}
-                        x="date"
-                        y="weight"
-                        size={5}
-                        style={{ data: { fill: COLORS.white } }}
-                    />
-                </VictoryChart>
+                {data.length > 0 ? (
+                    <VictoryChart
+                        domainPadding={{ x: 20 }}
+                        width={width}
+                        height={250}
+                    >
+                        <VictoryAxis
+                            style={{
+                                axis: { stroke: "transparent" },
+                                ticks: { stroke: "transparent" },
+                                tickLabels: { fill: COLORS.textSecondary, fontSize: 10 }
+                            }}
+                        />
+                        <VictoryLine
+                            data={data}
+                            x="date"
+                            y="weight"
+                            interpolation="catmullRom"
+                            style={{
+                                data: { stroke: COLORS.secondary, strokeWidth: 3 },
+                            }}
+                            animate={{
+                                duration: 2000,
+                                onLoad: { duration: 1000 }
+                            }}
+                        />
+                        <VictoryScatter
+                            data={data}
+                            x="date"
+                            y="weight"
+                            size={5}
+                            style={{ data: { fill: COLORS.white } }}
+                        />
+                    </VictoryChart>
+                ) : (
+                    <View style={styles.emptyChart}>
+                        <Text style={styles.emptyText}>Sem dados de peso ainda</Text>
+                    </View>
+                )}
             </View>
 
             <View style={styles.listContainer}>
-                <Text style={styles.historyTitle}>History</Text>
+                <Text style={styles.historyTitle}>Histórico</Text>
                 <FlatList
                     data={[...data].reverse()}
-                    keyExtractor={(item) => item.date}
+                    keyExtractor={(item) => item.fullDate}
                     renderItem={renderItem}
                     contentContainerStyle={styles.list}
                 />
@@ -100,6 +129,19 @@ const styles = StyleSheet.create({
     },
     chartContainer: {
         marginBottom: SPACING.m,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyChart: {
+        height: 250,
+        width: width - 48,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: RADIUS.m,
+    },
+    emptyText: {
+        color: COLORS.textSecondary,
     },
     listContainer: {
         flex: 1,

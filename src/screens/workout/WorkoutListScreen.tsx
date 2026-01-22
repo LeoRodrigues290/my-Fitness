@@ -1,38 +1,80 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { Plus, Calendar, ChevronRight } from 'lucide-react-native';
+import { Plus, ChevronRight, Trash2 } from 'lucide-react-native';
+import { useUser } from '../../context/UserContext';
+import { WorkoutRepository } from '../../services/WorkoutRepository';
+import { format } from 'date-fns';
 
 export const WorkoutListScreen = ({ navigation }: any) => {
-    // Mock data
-    const workouts = [
-        { id: 1, date: '2023-10-25', muscleGroup: 'Chest & Triceps', exercises: 5 },
-        { id: 2, date: '2023-10-23', muscleGroup: 'Back & Biceps', exercises: 6 },
-        { id: 3, date: '2023-10-21', muscleGroup: 'Legs', exercises: 4 },
-    ];
+    const { currentUser } = useUser();
+    const [workouts, setWorkouts] = useState<any[]>([]);
 
-    const renderItem = ({ item }: any) => (
-        <GlassView style={styles.card} intensity={15}>
-            <View style={styles.row}>
-                <View style={styles.dateBox}>
-                    <Text style={styles.day}>{item.date.split('-')[2]}</Text>
-                    <Text style={styles.month}>OCT</Text>
-                </View>
-                <View style={styles.contentBox}>
-                    <Text style={styles.title}>{item.muscleGroup}</Text>
-                    <Text style={styles.subtitle}>{item.exercises} Exercises</Text>
-                </View>
-                <ChevronRight color={COLORS.textSecondary} size={20} />
-            </View>
-        </GlassView>
+    const loadWorkouts = async () => {
+        if (!currentUser) return;
+        try {
+            const data = await WorkoutRepository.getWorkouts(currentUser.id);
+            setWorkouts(data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            loadWorkouts();
+        }, [currentUser])
     );
+
+    const handleDelete = (id: number) => {
+        Alert.alert(
+            "Excluir Treino",
+            "Tem certeza que deseja excluir este treino?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        await WorkoutRepository.deleteWorkout(id);
+                        loadWorkouts();
+                    }
+                }
+            ]
+        );
+    };
+
+    const renderItem = ({ item }: any) => {
+        const dateObj = new Date(item.date);
+        const day = format(dateObj, 'dd');
+        const month = format(dateObj, 'MMM');
+
+        return (
+            <TouchableOpacity onLongPress={() => handleDelete(item.id)} activeOpacity={0.8}>
+                <GlassView style={styles.card} intensity={15}>
+                    <View style={styles.row}>
+                        <View style={styles.dateBox}>
+                            <Text style={styles.day}>{day}</Text>
+                            <Text style={styles.month}>{month}</Text>
+                        </View>
+                        <View style={styles.contentBox}>
+                            <Text style={styles.title}>{item.muscle_group}</Text>
+                            <Text style={styles.subtitle}>{item.exercises?.length || 0} Exercícios</Text>
+                        </View>
+                        <ChevronRight color={COLORS.textSecondary} size={20} />
+                    </View>
+                </GlassView>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <Screen>
             <View style={styles.header}>
-                <Text style={styles.screenTitle}>My Workouts</Text>
+                <Text style={styles.screenTitle}>Meus Treinos</Text>
             </View>
 
             <FlatList
@@ -42,7 +84,8 @@ export const WorkoutListScreen = ({ navigation }: any) => {
                 contentContainerStyle={styles.list}
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Text style={{ color: COLORS.textSecondary }}>No workouts logged yet.</Text>
+                        <Text style={{ color: COLORS.textSecondary }}>Nenhum treino registrado.</Text>
+                        <Text style={{ color: COLORS.textSecondary, fontSize: SIZES.small, marginTop: SPACING.s }}>Toque em + para adicionar seu primeiro treino</Text>
                     </View>
                 }
             />

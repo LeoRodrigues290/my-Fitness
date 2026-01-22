@@ -1,24 +1,56 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { Plus, Utensils } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
+import { useUser } from '../../context/UserContext';
+import { NutritionRepository } from '../../services/NutritionRepository';
 
 export const NutritionScreen = ({ navigation }: any) => {
-    // Mock Data
-    const dailyStats = {
-        calories: { current: 1850, target: 2500 },
-        protein: { current: 140, target: 180 },
-        carbs: { current: 200, target: 300 },
-        fats: { current: 55, target: 80 },
+    const { currentUser } = useUser();
+    const [stats, setStats] = useState({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0
+    });
+    const [meals, setMeals] = useState<any[]>([]);
+
+    // Targets (Hardcoded for now, could be in User profile)
+    const targets = {
+        calories: 2500,
+        protein: 180,
+        carbs: 300,
+        fats: 80
     };
 
-    const meals = [
-        { id: 1, type: 'Breakfast', name: 'Oatmeal & Whey', calories: 450, protein: 30 },
-        { id: 2, type: 'Lunch', name: 'Chicken, Rice & Broccoli', calories: 650, protein: 45 },
-        { id: 3, type: 'Snack', name: 'Greek Yogurt', calories: 150, protein: 15 },
-    ];
+    const loadData = async () => {
+        if (!currentUser) return;
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const dailyMeals = await NutritionRepository.getMealsByDate(currentUser.id, today);
+            setMeals(dailyMeals);
+
+            const newStats = dailyMeals.reduce((acc: any, meal: any) => ({
+                calories: acc.calories + meal.calories,
+                protein: acc.protein + meal.protein,
+                carbs: acc.carbs + meal.carbs,
+                fats: acc.fats + meal.fats
+            }), { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+            setStats(newStats);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [currentUser])
+    );
 
     const renderMeal = ({ item }: any) => (
         <GlassView style={styles.mealCard} intensity={10}>
@@ -27,7 +59,7 @@ export const NutritionScreen = ({ navigation }: any) => {
                 <Text style={styles.mealCalories}>{item.calories} kcal</Text>
             </View>
             <Text style={styles.mealName}>{item.name}</Text>
-            <Text style={styles.mealMacros}>{item.protein}g Protein</Text>
+            <Text style={styles.mealMacros}>P: {item.protein}g • C: {item.carbs}g • F: {item.fats}g</Text>
         </GlassView>
     );
 
@@ -37,7 +69,7 @@ export const NutritionScreen = ({ navigation }: any) => {
             <View style={styles.progressContainer}>
                 <View style={styles.progressHeader}>
                     <Text style={styles.progressLabel}>{label}</Text>
-                    <Text style={styles.progressValue}>{current} / {target}</Text>
+                    <Text style={styles.progressValue}>{Math.round(current)} / {target}g</Text>
                 </View>
                 <View style={styles.progressBarBg}>
                     <View style={[styles.progressBarFill, { width: `${progress}%`, backgroundColor: color }]} />
@@ -50,35 +82,37 @@ export const NutritionScreen = ({ navigation }: any) => {
         <Screen>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={styles.screenTitle}>Nutrition</Text>
-                    <Text style={styles.date}>Today</Text>
+                    <Text style={styles.screenTitle}>Nutrição</Text>
+                    <Text style={styles.date}>Hoje</Text>
                 </View>
 
                 {/* Summary Card */}
                 <GlassView style={styles.summaryCard} intensity={20} gradientBorder>
                     <View style={styles.caloriesContainer}>
-                        <Text style={styles.caloriesLabel}>Nutrient Intake</Text>
+                        <Text style={styles.caloriesLabel}>Consumo Nutricional</Text>
                         <View style={styles.mainCals}>
-                            <Text style={styles.bigNumber}>{dailyStats.calories.current}</Text>
-                            <Text style={styles.targetLabel}> / {dailyStats.calories.target} kcal</Text>
+                            <Text style={styles.bigNumber}>{Math.round(stats.calories)}</Text>
+                            <Text style={styles.targetLabel}> / {targets.calories} kcal</Text>
                         </View>
                     </View>
 
                     <View style={styles.macrosContainer}>
-                        <ProgressBar label="Protein" current={dailyStats.protein.current} target={dailyStats.protein.target} color={COLORS.success} />
-                        <ProgressBar label="Carbs" current={dailyStats.carbs.current} target={dailyStats.carbs.target} color={COLORS.accent} />
-                        <ProgressBar label="Fats" current={dailyStats.fats.current} target={dailyStats.fats.target} color={COLORS.secondary} />
+                        <ProgressBar label="Proteína" current={stats.protein} target={targets.protein} color={COLORS.success} />
+                        <ProgressBar label="Carboidratos" current={stats.carbs} target={targets.carbs} color={COLORS.accent} />
+                        <ProgressBar label="Gorduras" current={stats.fats} target={targets.fats} color={COLORS.secondary} />
                     </View>
                 </GlassView>
 
-                <Text style={styles.sectionTitle}>Meals</Text>
+                <Text style={styles.sectionTitle}>Refeições</Text>
 
                 <View style={styles.mealsList}>
-                    {meals.map(item => (
+                    {meals.length > 0 ? meals.map(item => (
                         <View key={item.id} style={{ marginBottom: SPACING.m }}>
                             {renderMeal({ item })}
                         </View>
-                    ))}
+                    )) : (
+                        <Text style={{ color: COLORS.textSecondary, textAlign: 'center' }}>Nenhuma refeição registrada hoje</Text>
+                    )}
                 </View>
             </ScrollView>
 

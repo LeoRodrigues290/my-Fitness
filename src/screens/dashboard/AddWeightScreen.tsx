@@ -5,28 +5,45 @@ import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { GradientButton } from '../../components/ui/GradientButton';
 import { GlassView } from '../../components/ui/GlassView';
 import { X } from 'lucide-react-native';
+import { useUser } from '../../context/UserContext';
+import { UserRepository } from '../../services/UserRepository';
+import { SuccessModal } from '../../components/ui/SuccessModal';
 
 export const AddWeightScreen = ({ navigation }: any) => {
+    const { currentUser } = useUser();
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [weight, setWeight] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const handleSave = async () => {
-        // Save to DB
-        console.log('Saving weight', { date, weight });
-        navigation.goBack();
+        if (!currentUser || !weight) return;
+
+        await UserRepository.addWeightLog(
+            currentUser.id,
+            parseFloat(weight),
+            date
+        );
+
+        setShowSuccess(true);
     };
 
     return (
         <Screen style={{ paddingTop: 0 }}>
+            <SuccessModal
+                visible={showSuccess}
+                message="Peso Registrado!"
+                onClose={() => navigation.goBack()}
+            />
+
             <View style={styles.header}>
-                <Text style={styles.title}>Log Weight</Text>
+                <Text style={styles.title}>Registrar Peso</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <X color={COLORS.textSecondary} size={24} />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.label}>Date</Text>
+                <Text style={styles.label}>Data</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
                     <TextInput
                         style={styles.input}
@@ -37,7 +54,7 @@ export const AddWeightScreen = ({ navigation }: any) => {
                     />
                 </GlassView>
 
-                <Text style={styles.label}>Weight (kg)</Text>
+                <Text style={styles.label}>Peso (kg)</Text>
                 <GlassView style={styles.inputContainer} intensity={10}>
                     <TextInput
                         style={styles.input}
@@ -49,7 +66,7 @@ export const AddWeightScreen = ({ navigation }: any) => {
                     />
                 </GlassView>
 
-                <GradientButton title="Save Entry" onPress={handleSave} style={{ marginTop: SPACING.l }} />
+                <GradientButton title="Salvar" onPress={handleSave} style={{ marginTop: SPACING.l }} />
             </View>
         </Screen>
     );
