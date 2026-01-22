@@ -5,12 +5,16 @@ import { useUser } from '../context/UserContext';
 import { ProfileSelectionScreen } from '../screens/profile/ProfileSelectionScreen';
 import { MainTabNavigator } from './MainTabNavigator';
 import { AddWorkoutScreen } from '../screens/workout/AddWorkoutScreen';
+import { WorkoutRunnerScreen } from '../screens/workout/WorkoutRunnerScreen';
 import { AddWeightScreen } from '../screens/dashboard/AddWeightScreen';
 import { AddMealScreen } from '../screens/nutrition/AddMealScreen';
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { GoalsScreen } from '../screens/settings/GoalsScreen';
 import { RoutineSettingsScreen } from '../screens/settings/RoutineSettingsScreen';
+import { ExerciseLibraryScreen } from '../screens/settings/ExerciseLibraryScreen';
+import { CreateTemplateScreen } from '../screens/settings/CreateTemplateScreen';
 import { CalendarScreen } from '../screens/dashboard/CalendarScreen';
+import { ExerciseProgressScreen } from '../screens/profile/ExerciseProgressScreen';
 import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from '../constants/theme';
 
@@ -95,6 +99,42 @@ export const AppNavigator = () => {
                             options={{
                                 presentation: 'fullScreenModal',
                                 animation: 'slide_from_bottom',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="WorkoutRunner"
+                            component={WorkoutRunnerScreen}
+                            options={{
+                                presentation: 'fullScreenModal',
+                                animation: 'slide_from_bottom',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="ExerciseLibrary"
+                            component={ExerciseLibraryScreen}
+                            options={{
+                                presentation: 'card',
+                                animation: 'slide_from_right',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="CreateTemplate"
+                            component={CreateTemplateScreen}
+                            options={{
+                                presentation: 'card',
+                                animation: 'slide_from_right',
+                                headerShown: false
+                            }}
+                        />
+                        <Stack.Screen
+                            name="ExerciseProgress"
+                            component={ExerciseProgressScreen}
+                            options={{
+                                presentation: 'card',
+                                animation: 'slide_from_right',
                                 headerShown: false
                             }}
                         />

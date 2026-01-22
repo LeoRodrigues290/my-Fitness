@@ -10,6 +10,7 @@ import { WorkoutRepository } from '../../services/WorkoutRepository';
 import { NutritionRepository } from '../../services/NutritionRepository';
 import { UserRepository } from '../../services/UserRepository';
 import { RoutineRepository } from '../../services/RoutineRepository';
+import { WorkoutTemplateRepository, TemplateWithExercises } from '../../services/WorkoutTemplateRepository';
 import { format } from 'date-fns';
 import { AppHeader } from '../../components/ui/AppHeader';
 
@@ -58,6 +59,7 @@ export const DashboardScreen = ({ navigation }: any) => {
         lastWorkout: null as any
     });
     const [routine, setRoutine] = useState<any[]>([]);
+    const [todayTemplate, setTodayTemplate] = useState<TemplateWithExercises | null>(null);
 
     const loadData = async () => {
         if (!currentUser) return;
@@ -74,12 +76,17 @@ export const DashboardScreen = ({ navigation }: any) => {
             // 2. Last Workout
             const lastWorkout = await WorkoutRepository.getLastWorkout(currentUser.id);
 
-            // 3. Routine
+            // 3. Routine (legacy support)
             await RoutineRepository.initDefaultRoutine(currentUser.id);
             const weeklyRoutine = await RoutineRepository.getWeeklyRoutine(currentUser.id);
             setRoutine(weeklyRoutine);
 
-            // 4. Streak/Workouts (Simplified logic for now)
+            // 4. Today's Template (new 2.0 system)
+            const todayDayIndex = new Date().getDay();
+            const template = await WorkoutTemplateRepository.getTemplateByDay(currentUser.id, todayDayIndex);
+            setTodayTemplate(template);
+
+            // 5. Streak/Workouts (Simplified logic for now)
             const streak = await UserRepository.getUserStreak(currentUser.id);
 
             setStats(prev => ({
@@ -204,7 +211,16 @@ export const DashboardScreen = ({ navigation }: any) => {
                 <TouchableOpacity
                     style={styles.heroCard}
                     activeOpacity={0.9}
-                    onPress={() => navigation.navigate('Workouts')}
+                    onPress={() => {
+                        if (todayTemplate) {
+                            navigation.navigate('WorkoutRunner', {
+                                templateId: todayTemplate.id,
+                                templateName: todayTemplate.name
+                            });
+                        } else {
+                            navigation.navigate('WorkoutRunner', {});
+                        }
+                    }}
                 >
                     <ImageBackground
                         source={{ uri: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070&auto=format&fit=crop' }}
@@ -216,21 +232,39 @@ export const DashboardScreen = ({ navigation }: any) => {
                         <View style={styles.heroContent}>
                             <View style={styles.tagsRow}>
                                 <View style={[styles.tag, { backgroundColor: 'rgba(163, 230, 53, 0.2)', borderColor: 'rgba(163, 230, 53, 0.3)' }]}>
-                                    <Text style={[styles.tagText, { color: COLORS.lime }]}>Intermediário</Text>
+                                    <Text style={[styles.tagText, { color: COLORS.lime }]}>
+                                        {todayTemplate ? `${todayTemplate.exercises.length} exercícios` : 'Treino Livre'}
+                                    </Text>
                                 </View>
-                                <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                                    <Text style={[styles.tagText, { color: COLORS.white }]}>55 min</Text>
-                                </View>
+                                {todayTemplate && (
+                                    <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                        <Text style={[styles.tagText, { color: COLORS.white }]}>Template</Text>
+                                    </View>
+                                )}
                             </View>
 
                             <Text style={styles.heroTitle}>
-                                {stats.lastWorkout ? stats.lastWorkout.muscle_group : "Hipertrofia Superior"}
+                                {todayTemplate ? todayTemplate.name : 'Treino Livre'}
                             </Text>
                             <Text style={styles.heroSubtitle}>
-                                {stats.lastWorkout ? "Último realizado" : "Peito & Tríceps"}
+                                {todayTemplate
+                                    ? todayTemplate.exercises.slice(0, 3).map(e => e.exercise_name).join(', ')
+                                    : 'Comece um treino personalizado'}
                             </Text>
 
-                            <TouchableOpacity style={styles.startButton} onPress={() => navigation.navigate('Workouts')}>
+                            <TouchableOpacity
+                                style={styles.startButton}
+                                onPress={() => {
+                                    if (todayTemplate) {
+                                        navigation.navigate('WorkoutRunner', {
+                                            templateId: todayTemplate.id,
+                                            templateName: todayTemplate.name
+                                        });
+                                    } else {
+                                        navigation.navigate('WorkoutRunner', {});
+                                    }
+                                }}
+                            >
                                 <Play fill={COLORS.background} color={COLORS.background} size={18} />
                                 <Text style={styles.startButtonText}>Começar Treino</Text>
                             </TouchableOpacity>

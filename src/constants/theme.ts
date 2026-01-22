@@ -9,8 +9,10 @@ export const COLORS = {
 
     // Backgrounds (Slate)
     background: '#020617', // slate-950
+    surface: '#1e293b', // slate-800 (alias for card)
     card: '#1e293b', // slate-800
     cardBorder: '#334155', // slate-700
+    black: '#000000',
 
     // Text
     white: '#ffffff',
@@ -19,8 +21,12 @@ export const COLORS = {
     // Status
     success: '#a3e635', // lime-400
     error: '#ef4444',
+    danger: '#ef4444', // alias for error
     warning: '#f59e0b',
     accent: '#f97316', // orange
+
+    // Borders
+    border: '#334155', // slate-700
 
     // Gradients
     gradients: {

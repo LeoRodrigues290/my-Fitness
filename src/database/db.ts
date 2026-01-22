@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { SEED_EXERCISES } from './seedExercises';
 
 let db: SQLite.SQLiteDatabase;
 
@@ -88,7 +89,7 @@ export const initDatabase = async () => {
       );
     `);
 
-    // Create Weekly Routine Table
+    // Create Weekly Routine Table (deprecated - kept for backwards compatibility)
     await database.execAsync(`
       CREATE TABLE IF NOT EXISTS weekly_routine (
         user_id INTEGER NOT NULL,
@@ -99,11 +100,107 @@ export const initDatabase = async () => {
       );
     `);
 
+    // ===== MY-FITNESS 2.0 TABLES =====
+
+    // Exercise Library - Catálogo de todos os exercícios possíveis
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS exercise_library (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        video_url TEXT,
+        muscle_group TEXT,
+        instructions TEXT,
+        default_rest_seconds INTEGER DEFAULT 60,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Workout Templates - Templates/esqueletos de treino
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        day_assigned INTEGER,
+        color TEXT DEFAULT '#a3e635',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `);
+
+    // Template Exercises - Exercícios que pertencem a um template
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS template_exercises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_id INTEGER NOT NULL,
+        exercise_id INTEGER NOT NULL,
+        target_sets INTEGER DEFAULT 3,
+        target_reps TEXT DEFAULT '10-12',
+        target_weight REAL,
+        order_index INTEGER DEFAULT 0,
+        FOREIGN KEY (template_id) REFERENCES workout_templates (id) ON DELETE CASCADE,
+        FOREIGN KEY (exercise_id) REFERENCES exercise_library (id)
+      );
+    `);
+
+    // Workout Sessions - Sessões reais de treino (o que foi executado)
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS workout_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        template_id INTEGER,
+        started_at TEXT NOT NULL,
+        completed_at TEXT,
+        notes TEXT,
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (template_id) REFERENCES workout_templates (id)
+      );
+    `);
+
+    // Session Exercises - Exercícios executados em uma sessão
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS session_exercises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id INTEGER NOT NULL,
+        exercise_id INTEGER NOT NULL,
+        actual_sets INTEGER,
+        actual_reps TEXT,
+        actual_weight REAL,
+        order_index INTEGER,
+        completed INTEGER DEFAULT 0,
+        FOREIGN KEY (session_id) REFERENCES workout_sessions (id) ON DELETE CASCADE,
+        FOREIGN KEY (exercise_id) REFERENCES exercise_library (id)
+      );
+    `);
+
     // Seed initial users if empty
     const users = await database.getAllAsync('SELECT * FROM users');
     if (users.length === 0) {
       await database.runAsync('INSERT INTO users (name) VALUES (?)', 'User 1');
       await database.runAsync('INSERT INTO users (name) VALUES (?)', 'User 2');
+    }
+
+    // Seed exercise library if empty
+    const exercises = await database.getAllAsync('SELECT COUNT(*) as count FROM exercise_library');
+    const exerciseCount = (exercises[0] as { count: number }).count;
+    if (exerciseCount === 0) {
+      console.log('Seeding exercise library with', SEED_EXERCISES.length, 'exercises...');
+      for (const exercise of SEED_EXERCISES) {
+        try {
+          await database.runAsync(
+            `INSERT OR IGNORE INTO exercise_library (name, muscle_group, video_url, instructions, default_rest_seconds) 
+             VALUES (?, ?, ?, ?, ?)`,
+            exercise.name,
+            exercise.muscle_group,
+            exercise.video_url,
+            exercise.instructions,
+            exercise.default_rest_seconds
+          );
+        } catch (e) {
+          // Skip duplicates silently
+        }
+      }
+      console.log('Exercise library seeded successfully');
     }
 
     console.log('Database initialized successfully');

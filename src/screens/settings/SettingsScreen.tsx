@@ -4,7 +4,7 @@ import { Screen } from '../../components/ui/Screen';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { Target, User, Bell, ChevronRight, LogOut, Calendar } from 'lucide-react-native';
+import { Target, User, Bell, ChevronRight, LogOut, Calendar, TrendingUp, Dumbbell } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 
 export const SettingsScreen = ({ navigation }: any) => {
@@ -33,16 +33,21 @@ export const SettingsScreen = ({ navigation }: any) => {
             <AppHeader title="Configurações" showNotification={false} />
             <ScrollView contentContainerStyle={styles.content}>
 
-                <Text style={styles.sectionTitle}>Metas & Objetivos</Text>
-                <MenuItem
-                    icon={Target}
-                    label="Metas Diárias"
-                    onPress={() => navigation.navigate('Goals')}
-                />
+                <Text style={styles.sectionTitle}>Treinos</Text>
                 <MenuItem
                     icon={Calendar}
-                    label="Rotina de Treinos"
+                    label="Configurar Rotina"
                     onPress={() => navigation.navigate('RoutineSettings')}
+                />
+                <MenuItem
+                    icon={Dumbbell}
+                    label="Gerenciar Exercícios"
+                    onPress={() => navigation.navigate('ExerciseLibrary')}
+                />
+                <MenuItem
+                    icon={TrendingUp}
+                    label="Evolução de Carga"
+                    onPress={() => navigation.navigate('ExerciseProgress')}
                 />
 
                 <Text style={styles.sectionTitle}>Conta</Text>
