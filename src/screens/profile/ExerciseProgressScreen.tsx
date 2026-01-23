@@ -62,7 +62,7 @@ export const ExerciseProgressScreen = ({ navigation }: any) => {
     const latestPerf = historyData[historyData.length - 1] || null;
 
     return (
-        <Screen>
+        <Screen keyboardAvoiding dismissKeyboardOnTap>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>

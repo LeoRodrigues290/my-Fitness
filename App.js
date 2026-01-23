@@ -5,6 +5,7 @@ import GlassFitnessApp from './src/screens/GlassFitnessApp';
 import { initDatabase } from './src/database/db';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ErrorBoundary } from './src/components/ui/ErrorBoundary';
 
 export default function App() {
   const [dbReady, setDbReady] = React.useState(false);
@@ -23,7 +24,9 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <UserProvider>
-          <GlassFitnessApp />
+          <ErrorBoundary>
+            <GlassFitnessApp />
+          </ErrorBoundary>
           <StatusBar style="light" />
         </UserProvider>
       </SafeAreaProvider>

@@ -1,47 +1,40 @@
-export const COLORS = {
-    // Base Colors
-    primary: '#a3e635', // lime-400
-    secondary: '#8b5cf6', // violet-500 (keeping for some accents?) -> maybe switch to blue as per screenshot?
-    // Let's keep existing secondary for now but add specific ones
-    lime: '#a3e635',
-    blue: '#60a5fa', // blue-400
-    purple: '#c084fc', // purple-400
+import { colors } from './colors';
 
-    // Backgrounds (Slate)
-    background: '#020617', // slate-950
-    surface: '#1e293b', // slate-800 (alias for card)
-    card: '#1e293b', // slate-800
-    cardBorder: '#334155', // slate-700
-    black: '#000000',
+export const COLORS = {
+    // Brand
+    primary: colors.lime400,
+    secondary: colors.blue400,
+    accent: colors.orange400,
+
+    // Backgrounds
+    background: colors.slate950,
+    surface: 'rgba(30, 41, 59, 0.7)', // Slate 800 with opacity for glass
+    card: 'rgba(30, 41, 59, 0.5)',
+    modal: colors.slate900,
 
     // Text
-    white: '#ffffff',
-    textSecondary: '#94a3b8', // slate-400
+    textPrimary: colors.white,
+    textSecondary: colors.slate400,
+    textTertiary: colors.slate500,
 
-    // Status
-    success: '#a3e635', // lime-400
-    error: '#ef4444',
-    danger: '#ef4444', // alias for error
-    warning: '#f59e0b',
-    accent: '#f97316', // orange
+    // UI Elements
+    border: 'rgba(255, 255, 255, 0.1)',
+    borderStrong: 'rgba(255, 255, 255, 0.2)',
+    icon: colors.slate400,
+    iconActive: colors.lime400,
 
-    // Borders
-    border: '#334155', // slate-700
+    // Semantic
+    success: colors.lime400,
+    error: colors.red500,
+    warning: colors.orange400,
+    info: colors.blue400,
 
-    // Gradients
-    gradients: {
-        primary: ['#a3e635', '#bef264'] as const,
-        secondary: ['#60a5fa', '#93c5fd'] as const,
-        card: ['rgba(30, 41, 59, 0.7)', 'rgba(30, 41, 59, 0.4)'] as const, // Slate glass
-        dark: ['#0f172a', '#020617'] as const,
-    },
-
-    overlay: {
-        dark: 'rgba(0,0,0,0.7)',
-        medium: 'rgba(0,0,0,0.5)',
-        light: 'rgba(0,0,0,0.2)',
-    }
-};
+    // Raw alias
+    white: colors.white,
+    black: colors.black,
+    transparent: colors.transparent,
+    ...colors // Expose raw palette if needed
+} as const;
 
 export const SPACING = {
     xs: 4,
@@ -50,7 +43,8 @@ export const SPACING = {
     l: 24,
     xl: 32,
     xxl: 48,
-};
+    xxxl: 64,
+} as const;
 
 export const RADIUS = {
     s: 8,
@@ -58,13 +52,7 @@ export const RADIUS = {
     l: 24,
     xl: 32,
     circle: 9999,
-};
-
-export const FONTS = {
-    regular: 'Inter-Regular', // Need to load these or use system fonts if not available
-    medium: 'Inter-Medium',
-    bold: 'Inter-Bold',
-};
+} as const;
 
 export const SIZES = {
     h1: 32,
@@ -74,12 +62,22 @@ export const SIZES = {
     small: 14,
     tiny: 12,
     icon: 24,
-};
+    iconSmall: 18,
+    iconLarge: 32,
+} as const;
+
+export const LAYOUT = {
+    glass: {
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+    }
+} as const;
 
 export default {
     COLORS,
     SPACING,
     RADIUS,
-    FONTS,
     SIZES,
+    LAYOUT
 };

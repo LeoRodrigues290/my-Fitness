@@ -126,7 +126,7 @@ export const ExerciseLibraryScreen = ({ navigation }: any) => {
     }).length;
 
     return (
-        <Screen>
+        <Screen keyboardAvoiding dismissKeyboardOnTap>
             <CustomAlert
                 visible={alertConfig.visible}
                 title={alertConfig.title}
@@ -164,23 +164,29 @@ export const ExerciseLibraryScreen = ({ navigation }: any) => {
             </View>
 
             {/* Filter Pills */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
-                <TouchableOpacity
-                    style={[styles.filterPill, !selectedMuscle && styles.filterPillActive]}
-                    onPress={() => setSelectedMuscle(null)}
+            <View style={styles.filterContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterContent}
                 >
-                    <Text style={[styles.filterText, !selectedMuscle && styles.filterTextActive]}>Todos</Text>
-                </TouchableOpacity>
-                {muscleGroups.map(g => (
                     <TouchableOpacity
-                        key={g}
-                        style={[styles.filterPill, selectedMuscle === g && styles.filterPillActive]}
-                        onPress={() => setSelectedMuscle(g)}
+                        style={[styles.filterPill, !selectedMuscle && styles.filterPillActive]}
+                        onPress={() => setSelectedMuscle(null)}
                     >
-                        <Text style={[styles.filterText, selectedMuscle === g && styles.filterTextActive]}>{g}</Text>
+                        <Text style={[styles.filterText, !selectedMuscle && styles.filterTextActive]}>Todos</Text>
                     </TouchableOpacity>
-                ))}
-            </ScrollView>
+                    {muscleGroups.map(g => (
+                        <TouchableOpacity
+                            key={g}
+                            style={[styles.filterPill, selectedMuscle === g && styles.filterPillActive]}
+                            onPress={() => setSelectedMuscle(g)}
+                        >
+                            <Text style={[styles.filterText, selectedMuscle === g && styles.filterTextActive]}>{g}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
 
             {/* Count */}
             <Text style={styles.count}>{totalExercises} exercícios</Text>
@@ -288,9 +294,19 @@ const styles = StyleSheet.create({
     searchContainer: { paddingHorizontal: SPACING.l, marginBottom: SPACING.m },
     searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(30, 41, 59, 0.6)', borderRadius: RADIUS.m, padding: SPACING.m, gap: SPACING.s, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
     searchInput: { flex: 1, color: COLORS.white, fontSize: SIZES.body },
-    filterScroll: { maxHeight: 44, marginBottom: SPACING.s },
-    filterContent: { paddingHorizontal: SPACING.l, gap: SPACING.s },
-    filterPill: { paddingHorizontal: SPACING.m, paddingVertical: SPACING.xs, borderRadius: 20, backgroundColor: 'rgba(30, 41, 59, 0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+    filterContainer: { marginBottom: SPACING.s },
+    filterContent: { paddingHorizontal: SPACING.l, gap: SPACING.s, paddingBottom: 4 },
+    filterPill: {
+        paddingHorizontal: SPACING.m * 1.5, // Increased padding
+        paddingVertical: SPACING.s,
+        borderRadius: 20,
+        backgroundColor: 'rgba(30, 41, 59, 0.6)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        minWidth: 80, // Minimum width
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
     filterPillActive: { backgroundColor: COLORS.lime, borderColor: COLORS.lime },
     filterText: { color: COLORS.textSecondary, fontSize: SIZES.small, fontWeight: '600' },
     filterTextActive: { color: COLORS.background },
