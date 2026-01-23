@@ -61,11 +61,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                 <Text style={styles.sectionTitle}>CONTA</Text>
 
-                <TouchableOpacity style={styles.menuItem} onPress={onProfilePress}>
-                    <User size={20} color={colors.white} />
-                    <Text style={styles.menuItemText}>Editar Perfil</Text>
-                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
-                </TouchableOpacity>
 
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                     <LogOut size={20} color={colors.red500} />

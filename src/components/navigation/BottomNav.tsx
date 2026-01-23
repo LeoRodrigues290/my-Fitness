@@ -26,13 +26,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
     return (
         <BlurView
-            intensity={95}
+            intensity={100}
             tint="dark"
             style={[
                 styles.bottomNav,
                 {
                     paddingBottom: Math.max(insets.bottom, 20),
-                    backgroundColor: 'rgba(2, 6, 23, 0.6)'
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)'
                 }
             ]}
         >
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         borderTopWidth: 1,
-        borderTopColor: colors.slate800,
+        borderTopColor: 'rgba(255, 255, 255, 0.1)',
         paddingHorizontal: 16,
         paddingTop: 16,
     },
