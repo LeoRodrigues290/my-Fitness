@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -25,28 +25,31 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     const insets = useSafeAreaInsets();
 
     return (
-        <BlurView
-            intensity={100}
-            tint="dark"
-            style={[
-                styles.bottomNav,
-                {
-                    paddingBottom: Math.max(insets.bottom, 20),
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)'
-                }
-            ]}
-        >
+        <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            {/* Blur Background - Real blur effect */}
+            <BlurView
+                intensity={80}
+                tint="dark"
+                style={StyleSheet.absoluteFillObject}
+            />
+
+            {/* Semi-transparent overlay with bluish tint */}
+            <View style={styles.overlay} />
+
+            {/* Border top glassmorphism */}
+            <View style={styles.borderTop} />
+
             <View style={styles.bottomNavContent}>
                 <TouchableOpacity style={styles.navItem} onPress={() => onTabPress('home')}>
                     <Home size={24} color={activeTab === 'home' ? colors.lime400 : colors.slate400} />
-                    <Text style={[styles.navText, activeTab === 'home' && { color: colors.lime400 }]}>
+                    <Text style={[styles.navText, activeTab === 'home' && styles.navTextActive]}>
                         Início
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.navItem} onPress={() => onTabPress('workouts')}>
                     <Activity size={24} color={activeTab === 'workouts' ? colors.lime400 : colors.slate400} />
-                    <Text style={[styles.navText, activeTab === 'workouts' && { color: colors.lime400 }]}>
+                    <Text style={[styles.navText, activeTab === 'workouts' && styles.navTextActive]}>
                         Treinos
                     </Text>
                 </TouchableOpacity>
@@ -59,37 +62,48 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 
                 <TouchableOpacity style={styles.navItem} onPress={() => onTabPress('stats')}>
                     <BarChart2 size={24} color={activeTab === 'stats' ? colors.lime400 : colors.slate400} />
-                    <Text style={[styles.navText, activeTab === 'stats' && { color: colors.lime400 }]}>
-                        Estatísticas
+                    <Text style={[styles.navText, activeTab === 'stats' && styles.navTextActive]}>
+                        Stats
                     </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.navItem} onPress={() => onTabPress('nutrition')}>
                     <Utensils size={24} color={activeTab === 'nutrition' ? colors.lime400 : colors.slate400} />
-                    <Text style={[styles.navText, activeTab === 'nutrition' && { color: colors.lime400 }]}>
+                    <Text style={[styles.navText, activeTab === 'nutrition' && styles.navTextActive]}>
                         Dieta
                     </Text>
                 </TouchableOpacity>
             </View>
-        </BlurView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    bottomNav: {
+    container: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.1)',
-        paddingHorizontal: 16,
-        paddingTop: 16,
+        overflow: 'hidden',
+    },
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    },
+    borderTop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 1,
+        backgroundColor: 'rgba(148, 163, 184, 0.15)',
     },
     bottomNavContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 12,
     },
     navItem: {
         alignItems: 'center',
@@ -101,9 +115,12 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         color: colors.slate400,
     },
+    navTextActive: {
+        color: colors.lime400,
+    },
     fabContainer: {
         position: 'relative',
-        top: -24,
+        top: -20,
         flex: 1,
         alignItems: 'center',
     },
@@ -113,8 +130,8 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         shadowColor: colors.lime400,
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 8,
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 10,
     },
 });

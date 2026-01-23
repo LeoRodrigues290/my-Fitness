@@ -6,7 +6,10 @@ import {
     ScrollView,
     StyleSheet,
     Modal,
-    TextInput
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    Keyboard
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -250,11 +253,19 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onC
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <BlurView intensity={40} tint="dark" style={styles.modalContainer}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.modalContainer}
+            >
+                <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={() => { Keyboard.dismiss(); }}
+                />
                 <View style={styles.modalContent}>
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Adicionar ao {section}</Text>
-                        <TouchableOpacity onPress={() => { onClose(); resetState(); }}>
+                        <TouchableOpacity onPress={() => { Keyboard.dismiss(); onClose(); resetState(); }}>
                             <X size={24} color={colors.slate400} />
                         </TouchableOpacity>
                     </View>
@@ -269,14 +280,16 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onC
                                     value={query}
                                     onChangeText={setQuery}
                                     autoFocus
+                                    returnKeyType="search"
                                 />
                             </View>
 
-                            <ScrollView style={styles.resultsList}>
+                            <ScrollView style={styles.resultsList} keyboardShouldPersistTaps="handled">
                                 {results.map(food => (
                                     <TouchableOpacity
                                         key={food.id}
                                         onPress={() => {
+                                            Keyboard.dismiss();
                                             setSelectedFood(food);
                                             setQuantity(food.unit === 'g' || food.unit === 'ml' ? '100' : '1');
                                         }}
@@ -294,7 +307,7 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onC
                             </ScrollView>
                         </>
                     ) : (
-                        <View>
+                        <ScrollView keyboardShouldPersistTaps="handled">
                             <View style={styles.selectedHeader}>
                                 <TouchableOpacity onPress={() => setSelectedFood(null)}>
                                     <ChevronLeft size={24} color={colors.white} />
@@ -308,6 +321,7 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onC
                                 onChangeText={setQuantity}
                                 keyboardType="numeric"
                                 style={styles.quantityInput}
+                                onSubmitEditing={() => Keyboard.dismiss()}
                             />
 
                             <View style={styles.nutrientsRow}>
@@ -325,13 +339,13 @@ const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onC
                                 </View>
                             </View>
 
-                            <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
+                            <TouchableOpacity onPress={() => { Keyboard.dismiss(); handleAdd(); }} style={styles.addButton}>
                                 <Text style={styles.addButtonText}>Adicionar Alimento</Text>
                             </TouchableOpacity>
-                        </View>
+                        </ScrollView>
                     )}
                 </View>
-            </BlurView>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -374,8 +388,9 @@ const styles = StyleSheet.create({
     totalText: { color: colors.lime400, fontWeight: 'bold' },
 
     // Modal
-    modalContainer: { flex: 1, paddingTop: 60 },
-    modalContent: { flex: 1, backgroundColor: colors.slate950, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24 },
+    modalContainer: { flex: 1, justifyContent: 'flex-end' },
+    modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
+    modalContent: { backgroundColor: colors.slate950, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     modalTitle: { color: colors.white, fontSize: 20, fontWeight: 'bold' },
     searchInput: { backgroundColor: colors.slate900, borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.slate800 },
