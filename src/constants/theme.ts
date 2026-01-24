@@ -33,6 +33,15 @@ export const COLORS = {
     white: colors.white,
     black: colors.black,
     transparent: colors.transparent,
+
+    // Gradients (Restored)
+    gradients: {
+        primary: [colors.lime400, colors.lime500],
+        accent: [colors.orange400, colors.orange500],
+        card: ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)'],
+        dark: ['rgba(15,23,42,0.8)', 'rgba(15,23,42,0.95)'],
+    },
+
     ...colors // Expose raw palette if needed
 } as const;
 

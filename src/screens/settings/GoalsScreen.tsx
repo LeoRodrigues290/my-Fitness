@@ -15,6 +15,9 @@ export const GoalsScreen = ({ navigation }: any) => {
     const [burnGoal, setBurnGoal] = useState('');
     const [proteinGoal, setProteinGoal] = useState('');
     const [carbsGoal, setCarbsGoal] = useState('');
+    const [fatsGoal, setFatsGoal] = useState('');
+    const [waterGoal, setWaterGoal] = useState('');
+
     const [showAlert, setShowAlert] = useState(false);
 
     useEffect(() => {
@@ -31,6 +34,8 @@ export const GoalsScreen = ({ navigation }: any) => {
             setBurnGoal(goals.burn_goal?.toString() || '500');
             setProteinGoal(goals.protein_goal?.toString() || '150');
             setCarbsGoal(goals.carbs_goal?.toString() || '250');
+            setFatsGoal(goals.fats_goal?.toString() || '70');
+            setWaterGoal(goals.water_goal?.toString() || '2500');
         }
     };
 
@@ -41,7 +46,9 @@ export const GoalsScreen = ({ navigation }: any) => {
             parseInt(calorieGoal) || 0,
             parseInt(burnGoal) || 0,
             parseInt(proteinGoal) || 0,
-            parseInt(carbsGoal) || 0
+            parseInt(carbsGoal) || 0,
+            parseInt(fatsGoal) || 0,
+            parseInt(waterGoal) || 0
         );
         setShowAlert(true);
     };
@@ -67,35 +74,55 @@ export const GoalsScreen = ({ navigation }: any) => {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.description}>Defina seus objetivos diários para acompanhar seu progresso no Dashboard.</Text>
-
-                <Text style={styles.label}>Meta de Consumo (kcal)</Text>
-                <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={calorieGoal}
-                        onChangeText={setCalorieGoal}
-                        keyboardType="numeric"
-                        placeholder="2000"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
-                </GlassView>
-
-                <Text style={styles.label}>Meta de Gasto (kcal)</Text>
-                <GlassView style={styles.inputContainer} intensity={10}>
-                    <TextInput
-                        style={styles.input}
-                        value={burnGoal}
-                        onChangeText={setBurnGoal}
-                        keyboardType="numeric"
-                        placeholder="500"
-                        placeholderTextColor={COLORS.textSecondary}
-                    />
-                </GlassView>
+                <Text style={styles.sectionTitle}>CALORIAS & HIDRATAÇÃO</Text>
 
                 <View style={styles.row}>
                     <View style={styles.halfInput}>
-                        <Text style={styles.label}>Proteínas (g)</Text>
+                        <Text style={styles.label}>Calorias (kcal)</Text>
+                        <GlassView style={styles.inputContainer} intensity={10}>
+                            <TextInput
+                                style={styles.input}
+                                value={calorieGoal}
+                                onChangeText={setCalorieGoal}
+                                keyboardType="numeric"
+                                placeholder="2000"
+                                placeholderTextColor={COLORS.textSecondary}
+                            />
+                        </GlassView>
+                    </View>
+                    <View style={styles.halfInput}>
+                        <Text style={styles.label}>Água (ml)</Text>
+                        <GlassView style={styles.inputContainer} intensity={10}>
+                            <TextInput
+                                style={styles.input}
+                                value={waterGoal}
+                                onChangeText={setWaterGoal}
+                                keyboardType="numeric"
+                                placeholder="2500"
+                                placeholderTextColor={COLORS.textSecondary}
+                            />
+                        </GlassView>
+                    </View>
+                </View>
+
+                <View style={styles.oneThirdInput}>
+                    <Text style={styles.label}>Meta de Queima (kcal)</Text>
+                    <GlassView style={styles.inputContainer} intensity={10}>
+                        <TextInput
+                            style={styles.input}
+                            value={burnGoal}
+                            onChangeText={setBurnGoal}
+                            keyboardType="numeric"
+                            placeholder="500"
+                            placeholderTextColor={COLORS.textSecondary}
+                        />
+                    </GlassView>
+                </View>
+
+                <Text style={styles.sectionTitle}>MACRONUTRIENTES</Text>
+                <View style={styles.row}>
+                    <View style={styles.thirdInput}>
+                        <Text style={[styles.label, { color: COLORS.danger }]}>Prot (g)</Text>
                         <GlassView style={styles.inputContainer} intensity={10}>
                             <TextInput
                                 style={styles.input}
@@ -107,8 +134,8 @@ export const GoalsScreen = ({ navigation }: any) => {
                             />
                         </GlassView>
                     </View>
-                    <View style={styles.halfInput}>
-                        <Text style={styles.label}>Carboidratos (g)</Text>
+                    <View style={styles.thirdInput}>
+                        <Text style={[styles.label, { color: COLORS.primary }]}>Carb (g)</Text>
                         <GlassView style={styles.inputContainer} intensity={10}>
                             <TextInput
                                 style={styles.input}
@@ -120,9 +147,27 @@ export const GoalsScreen = ({ navigation }: any) => {
                             />
                         </GlassView>
                     </View>
+                    <View style={styles.thirdInput}>
+                        <Text style={[styles.label, { color: COLORS.accent }]}>Gord (g)</Text>
+                        <GlassView style={styles.inputContainer} intensity={10}>
+                            <TextInput
+                                style={styles.input}
+                                value={fatsGoal}
+                                onChangeText={setFatsGoal}
+                                keyboardType="numeric"
+                                placeholder="70"
+                                placeholderTextColor={COLORS.textSecondary}
+                            />
+                        </GlassView>
+                    </View>
                 </View>
 
-                <GradientButton title="Salvar Metas" onPress={handleSave} style={{ marginTop: SPACING.l }} />
+                <View style={styles.footer}>
+                    <GradientButton
+                        title="Salvar Metas"
+                        onPress={handleSave}
+                    />
+                </View>
 
             </ScrollView>
         </Screen>
@@ -142,30 +187,38 @@ const styles = StyleSheet.create({
     },
     title: {
         color: COLORS.white,
-        fontSize: SIZES.h2,
+        fontSize: SIZES.h3,
         fontWeight: 'bold',
     },
     content: {
-        padding: SPACING.m,
+        padding: SPACING.l,
     },
-    description: {
+    sectionTitle: {
         color: COLORS.textSecondary,
-        marginBottom: SPACING.l,
-        textAlign: 'center',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: SPACING.m,
+        marginTop: SPACING.m,
+        letterSpacing: 1,
     },
     label: {
         color: COLORS.textSecondary,
-        marginBottom: SPACING.s,
-        marginLeft: SPACING.xs,
+        marginBottom: SPACING.xs,
+        fontSize: SIZES.small,
+        fontWeight: '600',
     },
     inputContainer: {
         borderRadius: RADIUS.m,
         marginBottom: SPACING.m,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        backgroundColor: 'rgba(30,30,40,0.5)',
     },
     input: {
         color: COLORS.white,
         padding: SPACING.m,
-        fontSize: SIZES.body,
+        fontSize: 16,
+        fontWeight: '600',
     },
     row: {
         flexDirection: 'row',
@@ -173,5 +226,14 @@ const styles = StyleSheet.create({
     },
     halfInput: {
         flex: 1,
+    },
+    thirdInput: {
+        flex: 1,
+    },
+    oneThirdInput: {
+        width: '50%'
+    },
+    footer: {
+        marginTop: SPACING.xl,
     }
 });

@@ -308,17 +308,17 @@ export const DashboardScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
     scrollContent: {
-        padding: SPACING.l,
-        paddingBottom: 120, // Space for bottom nav
+        padding: SPACING.m, // Reduced from l
+        paddingBottom: 100,
     },
     greetingContainer: {
-        marginBottom: SPACING.l,
+        marginBottom: SPACING.m, // Reduced
+        paddingHorizontal: SPACING.s,
     },
     welcomeText: {
         color: COLORS.textSecondary,
         fontSize: SIZES.small,
         fontWeight: '500',
-        marginBottom: 4,
     },
     nameRow: {
         flexDirection: 'row',
@@ -326,21 +326,20 @@ const styles = StyleSheet.create({
         gap: SPACING.s,
     },
     userName: {
-        fontSize: 32,
+        fontSize: 24, // Reduced from 32
         fontWeight: 'bold',
         color: COLORS.white,
-        letterSpacing: -1,
     },
     grid: {
         flexDirection: 'row',
-        gap: SPACING.m,
-        marginBottom: SPACING.l,
+        gap: SPACING.s, // Reduced gap
+        marginBottom: SPACING.m,
     },
     glowCard: {
-        backgroundColor: 'rgba(30, 41, 59, 0.5)', // slate-800/50
-        borderRadius: 24,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        borderRadius: 20, // Slightly reduced
         padding: SPACING.m,
-        height: 140,
+        height: 110, // Reduced from 140
         justifyContent: 'space-between',
         borderWidth: 1,
         overflow: 'hidden',
@@ -357,7 +356,7 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
     },
     cardLabel: {
         fontSize: 10,
@@ -366,7 +365,7 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     cardValue: {
-        fontSize: 28,
+        fontSize: 24, // Reduced from 28
         fontWeight: 'bold',
         color: COLORS.white,
     },
@@ -377,48 +376,48 @@ const styles = StyleSheet.create({
     // Nutrition Row
     nutritionRow: {
         flexDirection: 'row',
-        gap: SPACING.m,
-        marginBottom: SPACING.l,
+        gap: SPACING.s,
+        marginBottom: SPACING.m,
     },
     miniCard: {
         flex: 1,
-        padding: SPACING.m,
+        padding: 10, // Manual reduction
         borderRadius: RADIUS.m,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: SPACING.s,
+        gap: 6,
     },
     miniIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 28, // Reduced
+        height: 28, // Reduced
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
     miniValue: {
         color: COLORS.white,
-        fontSize: SIZES.h3,
+        fontSize: 16, // Reduced
         fontWeight: 'bold',
     },
     miniUnit: {
-        fontSize: 10,
+        fontSize: 9,
         color: COLORS.textSecondary,
         marginLeft: 2,
     },
     miniLabel: {
         color: COLORS.textSecondary,
-        fontSize: 10,
+        fontSize: 9,
     },
     // Routine Slide
     routineCard: {
-        width: 140,
+        width: 120, // Reduced
         marginRight: SPACING.s,
     },
     routineImage: {
         width: '100%',
-        height: 100,
+        height: 80, // Reduced
         borderRadius: RADIUS.m,
-        marginBottom: SPACING.s,
+        marginBottom: SPACING.xs,
         justifyContent: 'flex-end',
         padding: SPACING.s,
     },
@@ -429,61 +428,58 @@ const styles = StyleSheet.create({
     },
     routineTitle: {
         color: COLORS.white,
-        fontSize: SIZES.body,
+        fontSize: 12,
         fontWeight: 'bold',
         marginBottom: 2,
     },
     routineSubtitle: {
         color: COLORS.textSecondary,
-        fontSize: SIZES.small,
+        fontSize: 10,
     },
     // Progress Widget
     progressCard: {
         flexDirection: 'row',
-        padding: SPACING.l,
-        borderRadius: 24,
+        padding: SPACING.m,
+        borderRadius: 20,
         alignItems: 'center',
         gap: SPACING.m,
-        marginBottom: SPACING.l,
+        marginBottom: SPACING.m,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.05)',
-        backgroundColor: 'linear-gradient(90deg, #1e293b 0%, #0f172a 100%)', // Approximate with solid color if gradient not supported on View
+        backgroundColor: '#1e293b',
     },
     progressHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     progressTitle: {
         color: COLORS.white,
         fontWeight: '600',
-        fontSize: SIZES.body,
+        fontSize: 14,
     },
     progressSubtitle: {
         color: COLORS.textSecondary,
         fontSize: 10,
-        marginBottom: SPACING.m,
+        marginBottom: 8,
     },
     progressBarBg: {
         height: 6,
-        backgroundColor: 'rgba(51, 65, 85, 1)', // slate-700
+        backgroundColor: 'rgba(51, 65, 85, 1)',
         borderRadius: 3,
-        width: 120,
+        width: '100%',
         overflow: 'hidden',
     },
     progressBarFill: {
         height: '100%',
         backgroundColor: COLORS.purple,
         borderRadius: 3,
-        shadowColor: COLORS.purple,
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
     },
     progressCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         borderWidth: 3,
         borderColor: COLORS.cardBorder,
         borderTopColor: COLORS.purple,
@@ -493,17 +489,18 @@ const styles = StyleSheet.create({
     progressPercent: {
         color: COLORS.white,
         fontWeight: 'bold',
-        fontSize: 12,
+        fontSize: 11,
     },
     // Hero Section
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        marginBottom: SPACING.m,
+        marginBottom: SPACING.s,
+        paddingHorizontal: SPACING.s,
     },
     sectionTitle: {
-        fontSize: SIZES.h3,
+        fontSize: 18, // Reduced
         color: COLORS.white,
         fontWeight: 'bold',
     },
@@ -513,71 +510,65 @@ const styles = StyleSheet.create({
         fontSize: SIZES.small,
     },
     heroCard: {
-        height: 280,
-        borderRadius: 32,
-        marginBottom: SPACING.xl,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.5,
-        shadowRadius: 20,
-        elevation: 10,
+        height: 220, // Reduced from 280
+        borderRadius: 24,
+        marginBottom: SPACING.l,
     },
     heroImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 32,
+        borderRadius: 24,
     },
     heroOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.3)', // gradient approximation
-        borderRadius: 32,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        borderRadius: 24,
     },
     heroContent: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        padding: SPACING.l,
+        padding: 20,
     },
     tagsRow: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: SPACING.m,
+        marginBottom: 12,
     },
     tag: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 100,
         borderWidth: 1,
-        backdropFilter: 'blur(10px)', // web only, implies glass effect
     },
     tagText: {
         fontSize: 10,
         fontWeight: '600',
     },
     heroTitle: {
-        fontSize: 24,
+        fontSize: 22,
         fontWeight: 'bold',
         color: COLORS.white,
         marginBottom: 4,
     },
     heroSubtitle: {
         color: 'rgba(255,255,255,0.8)',
-        fontSize: SIZES.body,
-        marginBottom: SPACING.l,
+        fontSize: 13,
+        marginBottom: 16,
     },
     startButton: {
         backgroundColor: COLORS.lime,
-        paddingVertical: 14,
-        borderRadius: 16,
+        paddingVertical: 12,
+        borderRadius: 14,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
     },
     startButtonText: {
-        color: '#0f172a', // slate-900
+        color: '#0f172a',
         fontWeight: 'bold',
-        fontSize: SIZES.body,
+        fontSize: 14,
     }
 });

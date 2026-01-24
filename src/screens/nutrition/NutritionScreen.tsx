@@ -5,19 +5,15 @@ import {
     TouchableOpacity,
     ScrollView,
     StyleSheet,
-    Modal,
-    TextInput,
-    KeyboardAvoidingView,
-    Platform,
-    Keyboard
+    Platform
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Droplet, Apple, Utensils, PlusCircle, X, ChevronLeft, Trash2 } from 'lucide-react-native';
+import { Plus, Droplet, Apple, Utensils, PlusCircle, Trash2, ChevronRight } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { useUser } from '../../context/UserContext';
 import { MealLogRepository, MealEntry, DailyStatsRepository } from '../../services/DailyStatsRepository';
-import { searchFood, FoodItem } from '../../data/foodDatabase';
+import { FoodItem } from '../../data/foodDatabase';
+import { FoodSearchModal } from '../../components/nutrition/FoodSearchModal'; // Import new modal
 
 const SECTIONS = [
     { id: 'Café da Manhã', icon: Apple, color: colors.orange400, goal: 450 },
@@ -65,27 +61,32 @@ export const NutritionScreen: React.FC = () => {
         setSearchModalVisible(true);
     };
 
-    const handleAddMeal = async (food: FoodItem, quantity: number) => {
+    // Modified to accept an array of items (Bulk Add)
+    const handleAddMeals = async (items: Array<{ food: FoodItem, quantity: number }>) => {
         if (!currentUser) return;
 
-        const multiplier = food.unit === 'g' || food.unit === 'ml'
-            ? quantity / food.portion
-            : quantity;
+        for (const item of items) {
+            const { food, quantity } = item;
+            const multiplier = food.unit === 'g' || food.unit === 'ml'
+                ? quantity / food.portion
+                : quantity;
 
-        const meal: Omit<MealEntry, 'id'> = {
-            user_id: currentUser.id,
-            date: today,
-            section: activeSection,
-            name: food.name,
-            calories: Math.round(food.calories * multiplier),
-            protein: Math.round(food.protein * multiplier),
-            carbs: Math.round(food.carbs * multiplier),
-            fats: Math.round(food.fats * multiplier),
-            quantity,
-            unit: food.unit
-        };
+            const meal: Omit<MealEntry, 'id'> = {
+                user_id: currentUser.id,
+                date: today,
+                section: activeSection,
+                name: food.name,
+                calories: Math.round(food.calories * multiplier),
+                protein: Math.round(food.protein * multiplier),
+                carbs: Math.round(food.carbs * multiplier),
+                fats: Math.round(food.fats * multiplier),
+                quantity,
+                unit: food.unit
+            };
 
-        await MealLogRepository.addMeal(meal);
+            await MealLogRepository.addMeal(meal);
+        }
+
         await loadData(); // Refresh
         setSearchModalVisible(false);
     };
@@ -149,17 +150,17 @@ export const NutritionScreen: React.FC = () => {
                                     <IconComponent size={18} color={section.color} />
                                     <Text style={styles.foodTitleText}>{section.id}</Text>
                                 </View>
-                                <TouchableOpacity onPress={() => handleOpenSearch(section.id)}>
-                                    <PlusCircle size={20} color={colors.lime400} />
-                                </TouchableOpacity>
+                                {sectionMeals.length > 0 && (
+                                    <Text style={styles.sectionSummary}>{sectionCals} kcal</Text>
+                                )}
                             </View>
 
                             <View style={styles.foodCard}>
                                 {sectionMeals.length === 0 ? (
-                                    <View style={styles.foodCardContent}>
+                                    <TouchableOpacity onPress={() => handleOpenSearch(section.id)} style={styles.emptyState}>
                                         <Text style={styles.foodPlaceholder}>Adicionar alimento...</Text>
-                                        <Text style={styles.foodCalories}>0 / {section.goal} kcal</Text>
-                                    </View>
+                                        <PlusCircle size={20} color={colors.lime400} />
+                                    </TouchableOpacity>
                                 ) : (
                                     <View>
                                         {sectionMeals.map(meal => (
@@ -167,21 +168,27 @@ export const NutritionScreen: React.FC = () => {
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={styles.mealName}>{meal.name}</Text>
                                                     <Text style={styles.mealDetails}>
-                                                        {meal.quantity}{meal.unit} • P: {meal.protein}g
+                                                        {meal.quantity}{meal.unit} • P: {meal.protein}g • C: {meal.carbs}g
                                                     </Text>
                                                 </View>
-                                                <Text style={styles.mealCalories}>{meal.calories} kcal</Text>
-                                                <TouchableOpacity
-                                                    onPress={() => handleDeleteMeal(meal.id!)}
-                                                    style={styles.deleteBtn}
-                                                >
-                                                    <Trash2 size={16} color={colors.red500} />
-                                                </TouchableOpacity>
+                                                <View style={styles.mealRight}>
+                                                    <Text style={styles.mealCalories}>{meal.calories}</Text>
+                                                    <TouchableOpacity
+                                                        onPress={() => handleDeleteMeal(meal.id!)}
+                                                        style={styles.deleteBtn}
+                                                    >
+                                                        <Trash2 size={16} color={colors.red500} />
+                                                    </TouchableOpacity>
+                                                </View>
                                             </View>
                                         ))}
-                                        <View style={styles.sectionTotal}>
-                                            <Text style={styles.totalText}>Total: {sectionCals} kcal</Text>
-                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.addMoreBtn}
+                                            onPress={() => handleOpenSearch(section.id)}
+                                        >
+                                            <Plus size={16} color={colors.lime400} />
+                                            <Text style={styles.addMoreText}>Adicionar mais</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 )}
                             </View>
@@ -190,168 +197,19 @@ export const NutritionScreen: React.FC = () => {
                 })}
             </ScrollView>
 
-            {/* Food Search Modal */}
+            {/* New Food Search Modal */}
             <FoodSearchModal
                 visible={searchModalVisible}
                 section={activeSection}
                 onClose={() => setSearchModalVisible(false)}
-                onAdd={handleAddMeal}
+                onAddMeals={handleAddMeals} // Now accepts array
             />
         </View>
     );
 };
 
-// Food Search Modal Component
-interface FoodSearchModalProps {
-    visible: boolean;
-    section: string;
-    onClose: () => void;
-    onAdd: (food: FoodItem, quantity: number) => void;
-}
-
-const FoodSearchModal: React.FC<FoodSearchModalProps> = ({ visible, section, onClose, onAdd }) => {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<FoodItem[]>([]);
-    const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
-    const [quantity, setQuantity] = useState('100');
-
-    useEffect(() => {
-        if (query.trim().length > 0) {
-            setResults(searchFood(query));
-        } else {
-            setResults([]);
-        }
-    }, [query]);
-
-    const handleAdd = () => {
-        if (!selectedFood) return;
-        const qty = parseFloat(quantity) || 1;
-        onAdd(selectedFood, qty);
-        resetState();
-    };
-
-    const resetState = () => {
-        setQuery('');
-        setSelectedFood(null);
-        setQuantity('100');
-    };
-
-    const getCalculatedNutrients = () => {
-        if (!selectedFood) return { calories: 0, protein: 0, carbs: 0 };
-        const qty = parseFloat(quantity) || 0;
-        const multiplier = selectedFood.unit === 'g' || selectedFood.unit === 'ml'
-            ? qty / selectedFood.portion
-            : qty;
-        return {
-            calories: Math.round(selectedFood.calories * multiplier),
-            protein: Math.round(selectedFood.protein * multiplier),
-            carbs: Math.round(selectedFood.carbs * multiplier),
-        };
-    };
-
-    const nutrients = getCalculatedNutrients();
-
-    return (
-        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.modalContainer}
-            >
-                <TouchableOpacity
-                    style={styles.modalBackdrop}
-                    activeOpacity={1}
-                    onPress={() => { Keyboard.dismiss(); }}
-                />
-                <View style={styles.modalContent}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Adicionar ao {section}</Text>
-                        <TouchableOpacity onPress={() => { Keyboard.dismiss(); onClose(); resetState(); }}>
-                            <X size={24} color={colors.slate400} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {!selectedFood ? (
-                        <>
-                            <View style={styles.searchInput}>
-                                <TextInput
-                                    placeholder="Buscar alimento (ex: frango, arroz)..."
-                                    placeholderTextColor={colors.slate500}
-                                    style={styles.searchText}
-                                    value={query}
-                                    onChangeText={setQuery}
-                                    autoFocus
-                                    returnKeyType="search"
-                                />
-                            </View>
-
-                            <ScrollView style={styles.resultsList} keyboardShouldPersistTaps="handled">
-                                {results.map(food => (
-                                    <TouchableOpacity
-                                        key={food.id}
-                                        onPress={() => {
-                                            Keyboard.dismiss();
-                                            setSelectedFood(food);
-                                            setQuantity(food.unit === 'g' || food.unit === 'ml' ? '100' : '1');
-                                        }}
-                                        style={styles.resultItem}
-                                    >
-                                        <Text style={styles.resultName}>{food.name}</Text>
-                                        <Text style={styles.resultDetails}>
-                                            {food.calories}kcal / {food.portion}{food.unit} • P: {food.protein}g
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                                {results.length === 0 && query.length > 0 && (
-                                    <Text style={styles.noResults}>Nenhum alimento encontrado.</Text>
-                                )}
-                            </ScrollView>
-                        </>
-                    ) : (
-                        <ScrollView keyboardShouldPersistTaps="handled">
-                            <View style={styles.selectedHeader}>
-                                <TouchableOpacity onPress={() => setSelectedFood(null)}>
-                                    <ChevronLeft size={24} color={colors.white} />
-                                </TouchableOpacity>
-                                <Text style={styles.selectedName}>{selectedFood.name}</Text>
-                            </View>
-
-                            <Text style={styles.quantityLabel}>Quantidade ({selectedFood.unit})</Text>
-                            <TextInput
-                                value={quantity}
-                                onChangeText={setQuantity}
-                                keyboardType="numeric"
-                                style={styles.quantityInput}
-                                onSubmitEditing={() => Keyboard.dismiss()}
-                            />
-
-                            <View style={styles.nutrientsRow}>
-                                <View style={styles.nutrientItem}>
-                                    <Text style={[styles.nutrientValue, { color: colors.orange400 }]}>{nutrients.calories}</Text>
-                                    <Text style={styles.nutrientLabel}>Kcal</Text>
-                                </View>
-                                <View style={styles.nutrientItem}>
-                                    <Text style={[styles.nutrientValue, { color: colors.red500 }]}>{nutrients.protein}</Text>
-                                    <Text style={styles.nutrientLabel}>Prot</Text>
-                                </View>
-                                <View style={styles.nutrientItem}>
-                                    <Text style={[styles.nutrientValue, { color: colors.lime400 }]}>{nutrients.carbs}</Text>
-                                    <Text style={styles.nutrientLabel}>Carb</Text>
-                                </View>
-                            </View>
-
-                            <TouchableOpacity onPress={() => { Keyboard.dismiss(); handleAdd(); }} style={styles.addButton}>
-                                <Text style={styles.addButtonText}>Adicionar Alimento</Text>
-                            </TouchableOpacity>
-                        </ScrollView>
-                    )}
-                </View>
-            </KeyboardAvoidingView>
-        </Modal>
-    );
-};
-
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingHorizontal: 24 },
+    container: { flex: 1, paddingHorizontal: 24, backgroundColor: colors.slate950 }, // Added bg color
     title: { fontSize: 28, fontWeight: 'bold', color: colors.white, marginBottom: 20 },
     scrollContent: { paddingBottom: 100 },
 
@@ -373,43 +231,21 @@ const styles = StyleSheet.create({
     foodHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     foodTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     foodTitleText: { color: colors.white, fontWeight: 'bold', fontSize: 16 },
-    foodCard: { backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.slate700 },
-    foodCardContent: { flexDirection: 'row', justifyContent: 'space-between' },
-    foodPlaceholder: { color: colors.slate300, fontSize: 14 },
-    foodCalories: { color: colors.slate500, fontSize: 14 },
+    sectionSummary: { color: colors.slate400, fontSize: 12 },
+
+    foodCard: { backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 16, padding: 4, borderWidth: 1, borderColor: colors.slate700 }, // Reduced padding
+
+    emptyState: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
+    foodPlaceholder: { color: colors.slate400, fontSize: 14 },
 
     // Meal rows
-    mealRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
-    mealName: { color: colors.white, fontWeight: '600' },
+    mealRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+    mealName: { color: colors.white, fontWeight: '600', fontSize: 14 },
     mealDetails: { color: colors.slate400, fontSize: 12 },
-    mealCalories: { color: colors.slate300, marginRight: 12 },
+    mealRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    mealCalories: { color: colors.white, fontWeight: 'bold', fontSize: 14 },
     deleteBtn: { padding: 4 },
-    sectionTotal: { marginTop: 12, alignItems: 'flex-end' },
-    totalText: { color: colors.lime400, fontWeight: 'bold' },
 
-    // Modal
-    modalContainer: { flex: 1, justifyContent: 'flex-end' },
-    modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
-    modalContent: { backgroundColor: colors.slate950, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    modalTitle: { color: colors.white, fontSize: 20, fontWeight: 'bold' },
-    searchInput: { backgroundColor: colors.slate900, borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.slate800 },
-    searchText: { color: colors.white, fontSize: 16 },
-    resultsList: { flex: 1 },
-    resultItem: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.slate800 },
-    resultName: { color: colors.white, fontWeight: 'bold' },
-    resultDetails: { color: colors.slate400, fontSize: 12 },
-    noResults: { color: colors.slate500, textAlign: 'center', marginTop: 20 },
-
-    // Selected food
-    selectedHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
-    selectedName: { color: colors.white, fontSize: 18, fontWeight: 'bold' },
-    quantityLabel: { color: colors.slate400, marginBottom: 8 },
-    quantityInput: { backgroundColor: colors.slate800, color: colors.white, padding: 16, borderRadius: 12, fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
-    nutrientsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 32 },
-    nutrientItem: { alignItems: 'center' },
-    nutrientValue: { fontSize: 20, fontWeight: 'bold' },
-    nutrientLabel: { color: colors.slate500, fontSize: 10 },
-    addButton: { backgroundColor: colors.lime400, padding: 16, borderRadius: 16, alignItems: 'center' },
-    addButtonText: { color: colors.slate900, fontWeight: 'bold', fontSize: 16 },
+    addMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, gap: 8 },
+    addMoreText: { color: colors.lime400, fontSize: 12, fontWeight: 'bold' },
 });

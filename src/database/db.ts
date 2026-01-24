@@ -69,7 +69,46 @@ export const initDatabase = async () => {
         burn_goal INTEGER DEFAULT 500,
         protein_goal INTEGER DEFAULT 150,
         carbs_goal INTEGER DEFAULT 250,
+        fats_goal INTEGER DEFAULT 70,
+        water_goal INTEGER DEFAULT 2500,
         FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `);
+
+    // Migrations for User Goals (Safe check)
+    try {
+      await database.runAsync('ALTER TABLE user_goals ADD COLUMN fats_goal INTEGER DEFAULT 70');
+    } catch (e) { }
+    try {
+      await database.runAsync('ALTER TABLE user_goals ADD COLUMN water_goal INTEGER DEFAULT 2500');
+    } catch (e) { }
+
+    // Create Food Combos (Meus Pratos)
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS food_combos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        total_calories INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `);
+
+    // Create Food Combo Items
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS food_combo_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        combo_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        calories REAL,
+        protein REAL,
+        carbs REAL,
+        fats REAL,
+        portion REAL,
+        unit TEXT,
+        quantity REAL,
+        FOREIGN KEY (combo_id) REFERENCES food_combos (id) ON DELETE CASCADE
       );
     `);
 
@@ -156,6 +195,13 @@ export const initDatabase = async () => {
         FOREIGN KEY (template_id) REFERENCES workout_templates (id)
       );
     `);
+
+    // Migration attempt for missing columns (Safe check)
+    try {
+      await database.runAsync('ALTER TABLE workout_sessions ADD COLUMN started_at TEXT');
+    } catch (e) {
+      // Column likely exists, ignore
+    }
 
     // Session Exercises - Exercícios executados em uma sessão
     await database.execAsync(`

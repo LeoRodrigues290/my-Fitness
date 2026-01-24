@@ -81,15 +81,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 30,
+        marginBottom: 20,
     },
     backButton: {
         padding: 8,
-        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)', // Lighter bg
         borderRadius: 12,
     },
     title: {
-        fontSize: 28,
+        fontSize: 24, // Slightly smaller Title
         fontWeight: 'bold',
         color: colors.white,
     },
@@ -109,37 +109,39 @@ const styles = StyleSheet.create({
     menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 16,
-        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+        padding: 12, // Reduced padding (from 16)
+        borderRadius: 12,
+        backgroundColor: 'rgba(30, 41, 59, 0.6)',
         borderWidth: 1,
-        borderColor: colors.slate700,
-        marginBottom: 12,
-        gap: 16,
+        borderColor: 'rgba(255, 255, 255, 0.1)', // Visible border
+        marginBottom: 8, // Reduced margin
+        gap: 12,
     },
     menuItemText: {
         color: colors.white,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '500',
         flex: 1,
     },
     menuArrow: {
         marginLeft: 'auto',
+        opacity: 0.5,
     },
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 16,
+        padding: 12, // Reduced padding
+        borderRadius: 12,
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.2)',
-        marginTop: 40,
-        gap: 16,
+        borderColor: 'rgba(239, 68, 68, 0.3)',
+        marginTop: 32,
+        justifyContent: 'center',
+        gap: 8,
     },
     logoutText: {
         color: colors.red500,
-        fontSize: 16,
-        fontWeight: '500',
+        fontSize: 15,
+        fontWeight: 'bold',
     },
 });

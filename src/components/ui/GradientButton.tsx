@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     container: {
         borderRadius: RADIUS.l,
         overflow: 'hidden',
-        height: 56,
+        height: 48,
     },
     gradient: {
         flex: 1,

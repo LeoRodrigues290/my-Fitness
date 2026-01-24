@@ -5,6 +5,8 @@ export interface UserGoalDB {
     burn_goal: number;
     protein_goal: number;
     carbs_goal: number;
+    fats_goal: number;
+    water_goal: number;
 }
 
 export const GoalRepository = {
@@ -22,18 +24,20 @@ export const GoalRepository = {
                 calorie_goal: 2000,
                 burn_goal: 500,
                 protein_goal: 150,
-                carbs_goal: 250
+                carbs_goal: 250,
+                fats_goal: 70,
+                water_goal: 2500
             };
         }
     },
 
-    saveGoals: async (userId: number, calorieGoal: number, burnGoal: number, proteinGoal: number, carbsGoal: number) => {
+    saveGoals: async (userId: number, calorieGoal: number, burnGoal: number, proteinGoal: number, carbsGoal: number, fatsGoal: number, waterGoal: number) => {
         const db = await getDBConnection();
         // Upsert logic (insert or replace)
         await db.runAsync(
-            `INSERT OR REPLACE INTO user_goals (user_id, calorie_goal, burn_goal, protein_goal, carbs_goal) 
-             VALUES (?, ?, ?, ?, ?)`,
-            userId, calorieGoal, burnGoal, proteinGoal, carbsGoal
+            `INSERT OR REPLACE INTO user_goals (user_id, calorie_goal, burn_goal, protein_goal, carbs_goal, fats_goal, water_goal) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            userId, calorieGoal, burnGoal, proteinGoal, carbsGoal, fatsGoal, waterGoal
         );
     }
 };
