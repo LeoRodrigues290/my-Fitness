@@ -7,327 +7,282 @@ import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
 import { useUser } from '../../context/UserContext';
 import { Flame, Clock, TrendingUp, Play, Calendar, CheckCircle2, ArrowRight, Utensils, Activity } from 'lucide-react-native';
 import { WorkoutRepository } from '../../services/WorkoutRepository';
-import { NutritionRepository } from '../../services/NutritionRepository';
-import { UserRepository } from '../../services/UserRepository';
-import { RoutineRepository } from '../../services/RoutineRepository';
-import { WorkoutTemplateRepository, TemplateWithExercises } from '../../services/WorkoutTemplateRepository';
-import { format } from 'date-fns';
-import { AppHeader } from '../../components/ui/AppHeader';
+import { GoalRepository } from '../../services/GoalRepository';
 
-const { width } = Dimensions.get('window');
+// ...
 
-// Reusable Glow Card Component
-const GlowCard = ({ title, value, subtitle, icon: Icon, color, glowColor, style }: any) => (
-    <View style={[styles.glowCard, style, { borderColor: 'rgba(255,255,255,0.05)' }]}>
-        {/* Glow Effect */}
-        <View style={[styles.glowBlob, { backgroundColor: glowColor }]} />
+const { currentUser } = useUser();
+const [stats, setStats] = useState({
+    caloriesConsumed: 0,
+    calorieGoal: 2000, // Default
+    protein: 0,
+    carbs: 0,
+    minutes: 45,
+    weeklyProgress: 0,
+    completedWorkouts: 0,
+    totalWorkouts: 5,
+    lastWorkout: null as any
+});
+// ...
 
-        <View style={styles.cardHeader}>
-            <Icon color={color} size={18} />
-            <Text style={[styles.cardLabel, { color: color }]}>{title}</Text>
-        </View>
+const loadData = async () => {
+    if (!currentUser) return;
 
-        <View>
-            <Text style={styles.cardValue}>{value}</Text>
-            <Text style={styles.cardSubtitle}>{subtitle}</Text>
-        </View>
-    </View>
+    try {
+        // 0. Load Goals First
+        const userGoals = await GoalRepository.getGoals(currentUser.id);
+        const calorieGoal = userGoals?.calorie_goal || 2000;
+
+        // 1. Today's Nutrition
+        const today = new Date().toISOString().split('T')[0];
+        const meals = await NutritionRepository.getMealsByDate(currentUser.id, today);
+
+        const consumed = meals.reduce((acc: number, m: any) => acc + m.calories, 0);
+        const prot = meals.reduce((acc: number, m: any) => acc + m.protein, 0);
+        const carb = meals.reduce((acc: number, m: any) => acc + m.carbs, 0);
+
+        // ... (rest of loadData)
+
+        setStats(prev => ({
+            ...prev,
+            caloriesConsumed: consumed,
+            calorieGoal: calorieGoal, // Update goal
+            protein: prot,
+            carbs: carb,
+            lastWorkout: lastWorkout,
+            completedWorkouts: streak > 5 ? 5 : streak
+        }));
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+useFocusEffect(
+    useCallback(() => {
+        loadData();
+    }, [currentUser])
 );
 
-const MiniStatCard = ({ label, value, unit, color, icon: Icon }: any) => (
-    <GlassView style={styles.miniCard} intensity={10}>
-        <View style={[styles.miniIcon, { backgroundColor: `${color}20` }]}>
-            <Icon size={14} color={color} />
-        </View>
-        <View>
-            <Text style={styles.miniValue}>{value}<Text style={styles.miniUnit}>{unit}</Text></Text>
-            <Text style={styles.miniLabel}>{label}</Text>
-        </View>
-    </GlassView>
-);
+// Hardcoded images for routine slide to match theme
+const mockImages = [
+    'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80',
+    'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?q=80',
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80',
+    'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80',
+    'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80',
+    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80',
+    'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80',
+];
 
-export const DashboardScreen = ({ navigation }: any) => {
-    const { currentUser } = useUser();
-    const [stats, setStats] = useState({
-        caloriesConsumed: 0,
-        protein: 0,
-        carbs: 0,
-        minutes: 45, // Mocked
-        weeklyProgress: 0, // Calculated
-        completedWorkouts: 0,
-        totalWorkouts: 5,
-        lastWorkout: null as any
-    });
-    const [routine, setRoutine] = useState<any[]>([]);
-    const [todayTemplate, setTodayTemplate] = useState<TemplateWithExercises | null>(null);
+// Helper to get image based on workout name
+const getWorkoutImage = (name: string) => {
+    const lower = name.toLowerCase();
+    if (lower.includes('costa') || lower.includes('back')) return 'https://images.unsplash.com/photo-1603287681836-e6c33e21e7d2?q=80';
+    if (lower.includes('peito') || lower.includes('chest')) return 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80';
+    if (lower.includes('perna') || lower.includes('leg')) return 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?q=80';
+    if (lower.includes('ombro') || lower.includes('shoulder')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80';
+    if (lower.includes('braço') || lower.includes('arm')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80'; // Reusing for now
+    if (lower.includes('cardio') || lower.includes('run')) return 'https://images.unsplash.com/photo-1538805060512-e219615df350?q=80';
+    return 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80'; // Generic Gym
+};
 
-    const loadData = async () => {
-        if (!currentUser) return;
+const heroImage = todayTemplate ? getWorkoutImage(todayTemplate.name) : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80'; // Yoga/Chill for rest
 
-        try {
-            // 1. Today's Nutrition
-            const today = new Date().toISOString().split('T')[0];
-            const meals = await NutritionRepository.getMealsByDate(currentUser.id, today);
+return (
+    <Screen>
+        <AppHeader showNotification={true} />
 
-            const consumed = meals.reduce((acc: number, m: any) => acc + m.calories, 0);
-            const prot = meals.reduce((acc: number, m: any) => acc + m.protein, 0);
-            const carb = meals.reduce((acc: number, m: any) => acc + m.carbs, 0);
+        <ScrollView contentContainerStyle={styles.scrollContent}>
 
-            // 2. Last Workout
-            const lastWorkout = await WorkoutRepository.getLastWorkout(currentUser.id);
+            {/* Greeting Section */}
+            <View style={styles.greetingContainer}>
+                <Text style={styles.welcomeText}>Bem-vindo de volta,</Text>
+                <View style={styles.nameRow}>
+                    <Text style={styles.userName}>{currentUser?.name || 'Atleta'}</Text>
+                    <Text style={{ fontSize: 24 }}>👋</Text>
+                </View>
+            </View>
 
-            // 3. Routine (legacy support)
-            await RoutineRepository.initDefaultRoutine(currentUser.id);
-            const weeklyRoutine = await RoutineRepository.getWeeklyRoutine(currentUser.id);
-            setRoutine(weeklyRoutine);
+            {/* Main Stats Grid (Burned & Time) */}
+            <View style={styles.grid}>
+                <GlowCard
+                    title="CALORIAS"
+                    value="450" // Placeholder for Burned
+                    subtitle="kcal queimadas"
+                    icon={Flame}
+                    color={COLORS.lime}
+                    glowColor="rgba(163, 230, 53, 0.15)"
+                    style={{ flex: 1 }}
+                />
+                <GlowCard
+                    title="TEMPO"
+                    value={stats.minutes}
+                    subtitle="minutos hoje"
+                    icon={Clock}
+                    color={COLORS.blue}
+                    glowColor="rgba(96, 165, 250, 0.15)"
+                    style={{ flex: 1 }}
+                />
+            </View>
 
-            // 4. Today's Template (new 2.0 system)
-            const todayDayIndex = new Date().getDay();
-            const template = await WorkoutTemplateRepository.getTemplateByDay(currentUser.id, todayDayIndex);
-            setTodayTemplate(template);
+            {/* Nutrition Stats Row */}
+            <View style={styles.nutritionRow}>
+                <MiniStatCard
+                    label="Consumidas"
+                    value={Math.round(stats.caloriesConsumed)}
+                    unit="kcal"
+                    color={COLORS.warning}
+                    icon={Utensils}
+                />
+                <MiniStatCard
+                    label="Proteínas"
+                    value={Math.round(stats.protein)}
+                    unit="g"
+                    color={COLORS.blue}
+                    icon={Activity}
+                />
+                <MiniStatCard
+                    label="Carboidratos"
+                    value={Math.round(stats.carbs)}
+                    unit="g"
+                    color={COLORS.lime}
+                    icon={Flame}
+                />
+            </View>
 
-            // 5. Streak/Workouts (Simplified logic for now)
-            const streak = await UserRepository.getUserStreak(currentUser.id);
+            {/* Daily Progress Widget */}
+            <GlassView style={styles.progressCard} intensity={20}>
+                <View style={{ flex: 1 }}>
+                    <View style={styles.progressHeader}>
+                        <TrendingUp color={COLORS.purple} size={16} />
+                        <Text style={styles.progressTitle}>Meta Semanal</Text>
+                    </View>
+                    <Text style={styles.progressSubtitle}>Você completou {stats.completedWorkouts} de {stats.totalWorkouts} treinos</Text>
 
-            setStats(prev => ({
-                ...prev,
-                caloriesConsumed: consumed,
-                protein: prot,
-                carbs: carb,
-                lastWorkout: lastWorkout,
-                completedWorkouts: streak > 5 ? 5 : streak // approximation
-            }));
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    useFocusEffect(
-        useCallback(() => {
-            loadData();
-        }, [currentUser])
-    );
-
-    // Hardcoded images for routine slide to match theme
-    const mockImages = [
-        'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80',
-        'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?q=80',
-        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80',
-        'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80',
-        'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?q=80',
-        'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80',
-        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80',
-    ];
-
-    // Helper to get image based on workout name
-    const getWorkoutImage = (name: string) => {
-        const lower = name.toLowerCase();
-        if (lower.includes('costa') || lower.includes('back')) return 'https://images.unsplash.com/photo-1603287681836-e6c33e21e7d2?q=80';
-        if (lower.includes('peito') || lower.includes('chest')) return 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80';
-        if (lower.includes('perna') || lower.includes('leg')) return 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?q=80';
-        if (lower.includes('ombro') || lower.includes('shoulder')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80';
-        if (lower.includes('braço') || lower.includes('arm')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80'; // Reusing for now
-        if (lower.includes('cardio') || lower.includes('run')) return 'https://images.unsplash.com/photo-1538805060512-e219615df350?q=80';
-        return 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80'; // Generic Gym
-    };
-
-    const heroImage = todayTemplate ? getWorkoutImage(todayTemplate.name) : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80'; // Yoga/Chill for rest
-
-    return (
-        <Screen>
-            <AppHeader showNotification={true} />
-
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-
-                {/* Greeting Section */}
-                <View style={styles.greetingContainer}>
-                    <Text style={styles.welcomeText}>Bem-vindo de volta,</Text>
-                    <View style={styles.nameRow}>
-                        <Text style={styles.userName}>{currentUser?.name || 'Atleta'}</Text>
-                        <Text style={{ fontSize: 24 }}>👋</Text>
+                    <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBarFill, { width: `${(stats.completedWorkouts / stats.totalWorkouts) * 100}%` }]} />
                     </View>
                 </View>
 
-                {/* Main Stats Grid (Burned & Time) */}
-                <View style={styles.grid}>
-                    <GlowCard
-                        title="CALORIAS"
-                        value="450" // Placeholder for Burned
-                        subtitle="kcal queimadas"
-                        icon={Flame}
-                        color={COLORS.lime}
-                        glowColor="rgba(163, 230, 53, 0.15)"
-                        style={{ flex: 1 }}
-                    />
-                    <GlowCard
-                        title="TEMPO"
-                        value={stats.minutes}
-                        subtitle="minutos hoje"
-                        icon={Clock}
-                        color={COLORS.blue}
-                        glowColor="rgba(96, 165, 250, 0.15)"
-                        style={{ flex: 1 }}
-                    />
+                <View style={styles.progressCircle}>
+                    <Text style={styles.progressPercent}>{Math.round((stats.completedWorkouts / stats.totalWorkouts) * 100)}%</Text>
                 </View>
+            </GlassView>
 
-                {/* Nutrition Stats Row */}
-                <View style={styles.nutritionRow}>
-                    <MiniStatCard
-                        label="Consumidas"
-                        value={Math.round(stats.caloriesConsumed)}
-                        unit="kcal"
-                        color={COLORS.warning}
-                        icon={Utensils}
-                    />
-                    <MiniStatCard
-                        label="Proteínas"
-                        value={Math.round(stats.protein)}
-                        unit="g"
-                        color={COLORS.blue}
-                        icon={Activity}
-                    />
-                    <MiniStatCard
-                        label="Carboidratos"
-                        value={Math.round(stats.carbs)}
-                        unit="g"
-                        color={COLORS.lime}
-                        icon={Flame}
-                    />
-                </View>
-
-                {/* Daily Progress Widget */}
-                <GlassView style={styles.progressCard} intensity={20}>
-                    <View style={{ flex: 1 }}>
-                        <View style={styles.progressHeader}>
-                            <TrendingUp color={COLORS.purple} size={16} />
-                            <Text style={styles.progressTitle}>Meta Semanal</Text>
-                        </View>
-                        <Text style={styles.progressSubtitle}>Você completou {stats.completedWorkouts} de {stats.totalWorkouts} treinos</Text>
-
-                        <View style={styles.progressBarBg}>
-                            <View style={[styles.progressBarFill, { width: `${(stats.completedWorkouts / stats.totalWorkouts) * 100}%` }]} />
-                        </View>
-                    </View>
-
-                    <View style={styles.progressCircle}>
-                        <Text style={styles.progressPercent}>{Math.round((stats.completedWorkouts / stats.totalWorkouts) * 100)}%</Text>
-                    </View>
-                </GlassView>
-
-                {/* Today's Workout Hero */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Treino de Hoje</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Calendar')}>
-                        <Text style={styles.seeAll}>Ver calendário</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                    style={styles.heroCard}
-                    activeOpacity={0.9}
-                    onPress={() => {
-                        if (todayTemplate) {
-                            navigation.navigate('WorkoutRunner', {
-                                templateId: todayTemplate.id,
-                                templateName: todayTemplate.name
-                            });
-                        } else {
-                            navigation.navigate('WorkoutRunner', {}); // Free workout
-                        }
-                    }}
-                >
-                    <ImageBackground
-                        source={{ uri: heroImage }}
-                        style={styles.heroImage}
-                        imageStyle={{ borderRadius: 32 }}
-                    >
-                        <View style={styles.heroOverlay} />
-
-                        <View style={styles.heroContent}>
-                            <View style={styles.tagsRow}>
-                                {todayTemplate ? (
-                                    <>
-                                        <View style={[styles.tag, { backgroundColor: 'rgba(163, 230, 53, 0.2)', borderColor: 'rgba(163, 230, 53, 0.3)' }]}>
-                                            <Text style={[styles.tagText, { color: COLORS.lime }]}>
-                                                Agendado para hoje
-                                            </Text>
-                                        </View>
-                                        <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                                            <Text style={[styles.tagText, { color: COLORS.white }]}>
-                                                {todayTemplate.exercises?.length || 0} exercícios
-                                            </Text>
-                                        </View>
-                                    </>
-                                ) : (
-                                    <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                                        <Text style={[styles.tagText, { color: COLORS.white }]}>Dia Livre ou Descanso</Text>
-                                    </View>
-                                )}
-                            </View>
-
-                            <Text style={styles.heroTitle}>
-                                {todayTemplate ? todayTemplate.name : 'Nenhum treino agendado'}
-                            </Text>
-                            <Text style={styles.heroSubtitle}>
-                                {todayTemplate
-                                    ? (todayTemplate.exercises && todayTemplate.exercises.length > 0
-                                        ? todayTemplate.exercises.slice(0, 3).map(e => e.exercise_name).join(', ') + '...'
-                                        : 'Toque para começar')
-                                    : 'Aproveite para descansar ou inicie um treino avulso.'}
-                            </Text>
-
-                            <TouchableOpacity
-                                style={styles.startButton}
-                                onPress={() => {
-                                    if (todayTemplate) {
-                                        navigation.navigate('WorkoutRunner', {
-                                            templateId: todayTemplate.id,
-                                            templateName: todayTemplate.name
-                                        });
-                                    } else {
-                                        navigation.navigate('WorkoutRunner', {});
-                                    }
-                                }}
-                            >
-                                <Play fill={COLORS.background} color={COLORS.background} size={18} />
-                                <Text style={styles.startButtonText}>{todayTemplate ? 'Iniciar Treino Agora' : 'Treino Livre'}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </ImageBackground>
+            {/* Today's Workout Hero */}
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Treino de Hoje</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Calendar')}>
+                    <Text style={styles.seeAll}>Ver calendário</Text>
                 </TouchableOpacity>
+            </View>
 
-                {/* Your Routine Slide */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Sua Rotina</Text>
-                    <ArrowRight size={18} color={COLORS.textSecondary} />
-                </View>
+            <TouchableOpacity
+                style={styles.heroCard}
+                activeOpacity={0.9}
+                onPress={() => {
+                    if (todayTemplate) {
+                        navigation.navigate('WorkoutRunner', {
+                            templateId: todayTemplate.id,
+                            templateName: todayTemplate.name
+                        });
+                    } else {
+                        navigation.navigate('WorkoutRunner', {}); // Free workout
+                    }
+                }}
+            >
+                <ImageBackground
+                    source={{ uri: heroImage }}
+                    style={styles.heroImage}
+                    imageStyle={{ borderRadius: 32 }}
+                >
+                    <View style={styles.heroOverlay} />
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: SPACING.l, gap: SPACING.m }}>
-                    {routine.map((item, index) => (
+                    <View style={styles.heroContent}>
+                        <View style={styles.tagsRow}>
+                            {todayTemplate ? (
+                                <>
+                                    <View style={[styles.tag, { backgroundColor: 'rgba(163, 230, 53, 0.2)', borderColor: 'rgba(163, 230, 53, 0.3)' }]}>
+                                        <Text style={[styles.tagText, { color: COLORS.lime }]}>
+                                            Agendado para hoje
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                        <Text style={[styles.tagText, { color: COLORS.white }]}>
+                                            {todayTemplate.exercises?.length || 0} exercícios
+                                        </Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                    <Text style={[styles.tagText, { color: COLORS.white }]}>Dia Livre ou Descanso</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        <Text style={styles.heroTitle}>
+                            {todayTemplate ? todayTemplate.name : 'Nenhum treino agendado'}
+                        </Text>
+                        <Text style={styles.heroSubtitle}>
+                            {todayTemplate
+                                ? (todayTemplate.exercises && todayTemplate.exercises.length > 0
+                                    ? todayTemplate.exercises.slice(0, 3).map(e => e.exercise_name).join(', ') + '...'
+                                    : 'Toque para começar')
+                                : 'Aproveite para descansar ou inicie um treino avulso.'}
+                        </Text>
+
                         <TouchableOpacity
-                            key={index}
-                            style={styles.routineCard}
-                            onPress={() => navigation.navigate('Calendar')} // Or edit routine
+                            style={styles.startButton}
+                            onPress={() => {
+                                if (todayTemplate) {
+                                    navigation.navigate('WorkoutRunner', {
+                                        templateId: todayTemplate.id,
+                                        templateName: todayTemplate.name
+                                    });
+                                } else {
+                                    navigation.navigate('WorkoutRunner', {});
+                                }
+                            }}
                         >
-                            <ImageBackground
-                                source={{ uri: mockImages[index % mockImages.length] }}
-                                style={styles.routineImage}
-                                imageStyle={{ borderRadius: RADIUS.m }}
-                            >
-                                <View style={styles.routineOverlay} />
-                            </ImageBackground>
-
-                            <Text style={styles.routineTitle} numberOfLines={1}>{item.workout_focus}</Text>
-                            <Text style={styles.routineSubtitle}>
-                                {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][item.day_index]}
-                            </Text>
+                            <Play fill={COLORS.background} color={COLORS.background} size={18} />
+                            <Text style={styles.startButtonText}>{todayTemplate ? 'Iniciar Treino Agora' : 'Treino Livre'}</Text>
                         </TouchableOpacity>
-                    ))}
-                </ScrollView>
+                    </View>
+                </ImageBackground>
+            </TouchableOpacity>
 
+            {/* Your Routine Slide */}
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Sua Rotina</Text>
+                <ArrowRight size={18} color={COLORS.textSecondary} />
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: SPACING.l, gap: SPACING.m }}>
+                {routine.map((item, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.routineCard}
+                        onPress={() => navigation.navigate('Calendar')} // Or edit routine
+                    >
+                        <ImageBackground
+                            source={{ uri: mockImages[index % mockImages.length] }}
+                            style={styles.routineImage}
+                            imageStyle={{ borderRadius: RADIUS.m }}
+                        >
+                            <View style={styles.routineOverlay} />
+                        </ImageBackground>
+
+                        <Text style={styles.routineTitle} numberOfLines={1}>{item.workout_focus}</Text>
+                        <Text style={styles.routineSubtitle}>
+                            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][item.day_index]}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </ScrollView>
-        </Screen >
-    );
+
+        </ScrollView>
+    </Screen >
+);
 };
 
 const styles = StyleSheet.create({

@@ -1,251 +1,324 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    StyleSheet,
-    Platform
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus, Droplet, Apple, Utensils, PlusCircle, Trash2, ChevronRight } from 'lucide-react-native';
-import { colors } from '../../constants/colors';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Screen } from '../../components/ui/Screen';
+import { AppHeader } from '../../components/ui/AppHeader';
+import { GlassView } from '../../components/ui/GlassView';
+import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
+import { Plus, ChevronRight, Droplet, Flame, Utensils, Trash2 } from 'lucide-react-native';
+import { NutritionRepository } from '../../services/NutritionRepository';
 import { useUser } from '../../context/UserContext';
-import { MealLogRepository, MealEntry, DailyStatsRepository } from '../../services/DailyStatsRepository';
+import { FoodSearchModal } from '../../components/nutrition/FoodSearchModal';
 import { FoodItem } from '../../data/foodDatabase';
-import { FoodSearchModal } from '../../components/nutrition/FoodSearchModal'; // Import new modal
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-const SECTIONS = [
-    { id: 'Café da Manhã', icon: Apple, color: colors.orange400, goal: 450 },
-    { id: 'Almoço', icon: Utensils, color: colors.lime400, goal: 600 },
-    { id: 'Lanche', icon: Apple, color: colors.lime400, goal: 200 },
-    { id: 'Jantar', icon: Utensils, color: colors.blue400, goal: 450 },
-];
+interface MealSectionProps {
+    title: string;
+    calories: number;
+    items: any[];
+    onAdd: () => void;
+    onDelete: (item: any) => void;
+}
 
-export const NutritionScreen: React.FC = () => {
-    const insets = useSafeAreaInsets();
-    const { currentUser, userPreferences } = useUser();
+const MealSection = ({ title, calories, items, onAdd, onDelete }: MealSectionProps) => (
+    <View style={styles.mealSection}>
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <Text style={styles.sectionCalories}>{calories} kcal</Text>
+        </View>
 
-    const [meals, setMeals] = useState<MealEntry[]>([]);
-    const [waterConsumed, setWaterConsumed] = useState(0);
+        {items.map((item, index) => (
+            <GlassView key={index} style={styles.foodItem} intensity={10}>
+                <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{item.name}</Text>
+                    <Text style={styles.foodServing}>{item.quantity}{item.unit || 'g'}</Text>
+                </View>
+                <View style={styles.foodStats}>
+                    <Text style={styles.foodCal}>{item.calories} kcal</Text>
+                    <TouchableOpacity onPress={() => onDelete(item)} style={{ padding: 4 }}>
+                        <Trash2 size={16} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+            </GlassView>
+        ))}
+
+        <TouchableOpacity style={styles.addButton} onPress={onAdd}>
+            <Plus size={20} color={COLORS.primary} />
+            <Text style={styles.addText}>Adicionar Alimento</Text>
+        </TouchableOpacity>
+    </View>
+);
+
+export const NutritionScreen = ({ navigation }: any) => {
+    const { currentUser } = useUser();
+    const [today] = useState(new Date().toISOString().split('T')[0]);
+    const [meals, setMeals] = useState<any[]>([]);
+    const [waterIntake, setWaterIntake] = useState(0);
     const [searchModalVisible, setSearchModalVisible] = useState(false);
     const [activeSection, setActiveSection] = useState('');
 
-    const today = new Date().toISOString().split('T')[0];
-
-    // Load data on mount
-    useEffect(() => {
-        loadData();
-    }, [currentUser]);
-
     const loadData = async () => {
         if (!currentUser) return;
-
-        // Load meals for today
-        const todayMeals = await MealLogRepository.getMealsForDate(currentUser.id, today);
+        const todayMeals = await NutritionRepository.getMealsByDate(currentUser.id, today);
         setMeals(todayMeals);
-
-        // Load water consumption
-        const stats = await DailyStatsRepository.getStatsForDate(currentUser.id, today);
-        setWaterConsumed(stats?.water_consumed || 0);
+        // Water would be loaded here if we had a water table, for now mock or local state
     };
 
-    const addWater = async (amount: number) => {
-        if (!currentUser) return;
-        await DailyStatsRepository.addWater(currentUser.id, amount);
-        setWaterConsumed(prev => prev + amount);
-    };
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [currentUser, today])
+    );
 
-    const handleOpenSearch = (section: string) => {
+    const openSearch = (section: string) => {
         setActiveSection(section);
         setSearchModalVisible(true);
     };
 
-    // Modified to accept an array of items (Bulk Add)
     const handleAddMeals = async (items: Array<{ food: FoodItem, quantity: number }>) => {
         if (!currentUser) return;
 
         for (const item of items) {
-            const { food, quantity } = item;
-            const multiplier = food.unit === 'g' || food.unit === 'ml'
-                ? quantity / food.portion
-                : quantity;
+            // Multiplier logic depends on unit. If 'g' or 'ml', quantity is absolute value (e.g. 150g)
+            // Database food.portion is usually 100g.
+            // If unit is 'unidade', quantity is count (e.g. 2 bananas)
 
-            const meal: Omit<MealEntry, 'id'> = {
-                user_id: currentUser.id,
-                date: today,
-                section: activeSection,
-                name: food.name,
-                calories: Math.round(food.calories * multiplier),
-                protein: Math.round(food.protein * multiplier),
-                carbs: Math.round(food.carbs * multiplier),
-                fats: Math.round(food.fats * multiplier),
-                quantity,
-                unit: food.unit
-            };
+            let protein = 0;
+            let carbs = 0;
+            let fats = 0;
+            let calories = 0;
 
-            await MealLogRepository.addMeal(meal);
+            if (item.food.unit === 'g' || item.food.unit === 'ml') {
+                const ratio = item.quantity / item.food.portion;
+                calories = Math.round(item.food.calories * ratio);
+                protein = Math.round(item.food.protein * ratio);
+                carbs = Math.round(item.food.carbs * ratio);
+                fats = Math.round(item.food.fats * ratio);
+            } else {
+                calories = Math.round(item.food.calories * item.quantity);
+                protein = Math.round(item.food.protein * item.quantity);
+                carbs = Math.round(item.food.carbs * item.quantity);
+                fats = Math.round(item.food.fats * item.quantity);
+            }
+
+            await NutritionRepository.addMeal(
+                currentUser.id,
+                today,
+                activeSection,
+                item.food.name,
+                calories,
+                protein,
+                carbs,
+                fats,
+                item.quantity,
+                item.food.unit
+            );
         }
 
-        await loadData(); // Refresh
+        await loadData();
         setSearchModalVisible(false);
     };
 
-    const handleDeleteMeal = async (mealId: number) => {
+    const handleDeleteMeal = async (item: any) => {
         if (!currentUser) return;
-        await MealLogRepository.deleteMeal(mealId, currentUser.id, today);
-        await loadData();
+        Alert.alert(
+            "Remover Item",
+            `Deseja remover ${item.name}?`,
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Remover",
+                    style: "destructive",
+                    onPress: async () => {
+                        await NutritionRepository.deleteMeal(item.id);
+                        loadData();
+                    }
+                }
+            ]
+        );
     };
 
-    const waterGoal = userPreferences.goals.water;
-    const waterProgress = Math.min((waterConsumed / waterGoal) * 100, 100);
+    // Calculate Totals
+    const totalCalories = meals.reduce((acc, m) => acc + m.calories, 0);
+    const totalProtein = meals.reduce((acc, m) => acc + m.protein, 0);
+    const totalCarbs = meals.reduce((acc, m) => acc + m.carbs, 0);
+    const totalFats = meals.reduce((acc, m) => acc + m.fats, 0);
 
-    const getMealsForSection = (section: string) => meals.filter(m => m.section === section);
-    const getSectionCalories = (section: string) => getMealsForSection(section).reduce((sum, m) => sum + m.calories, 0);
+    // Section Filters
+    const breakfast = meals.filter(m => m.section === 'Café da Manhã');
+    const lunch = meals.filter(m => m.section === 'Almoço');
+    const dinner = meals.filter(m => m.section === 'Jantar');
+    const snacks = meals.filter(m => m.section === 'Snack');
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top + 20 }]}>
-            <Text style={styles.title}>Dieta & Hidratação</Text>
+        <Screen>
+            <AppHeader title="Nutrição Diária" showNotification={false} />
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-                {/* Water Tracker Card */}
-                <View style={styles.waterCard}>
-                    <View style={styles.waterHeader}>
-                        <View style={styles.waterTitle}>
-                            <Droplet size={24} color={colors.blue400} fill={colors.blue400} />
-                            <Text style={styles.waterTitleText}>Hidratação</Text>
+            <ScrollView contentContainerStyle={styles.content}>
+                {/* Macro Summary */}
+                <GlassView style={styles.macroCard} intensity={20}>
+                    <View style={styles.macroRow}>
+                        <View style={styles.macroItem}>
+                            <Text style={styles.macroValue}>{totalCalories}</Text>
+                            <Text style={styles.macroLabel}>Kcal</Text>
                         </View>
-                        <Text style={styles.waterValue}>
-                            {waterConsumed}{' '}
-                            <Text style={styles.waterGoal}>/ {waterGoal} ml</Text>
-                        </Text>
-                    </View>
-
-                    <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${waterProgress}%` }]} />
-                    </View>
-
-                    <View style={styles.waterActions}>
-                        <TouchableOpacity onPress={() => addWater(250)} style={styles.waterButton}>
-                            <Plus size={16} color={colors.blue400} />
-                            <Text style={styles.waterButtonText}>250ml</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => addWater(500)} style={styles.waterButton}>
-                            <Plus size={16} color={colors.blue400} />
-                            <Text style={styles.waterButtonText}>500ml</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Food Sections */}
-                {SECTIONS.map(section => {
-                    const sectionMeals = getMealsForSection(section.id);
-                    const sectionCals = getSectionCalories(section.id);
-                    const IconComponent = section.icon;
-
-                    return (
-                        <View key={section.id} style={styles.foodSection}>
-                            <View style={styles.foodHeader}>
-                                <View style={styles.foodTitle}>
-                                    <IconComponent size={18} color={section.color} />
-                                    <Text style={styles.foodTitleText}>{section.id}</Text>
-                                </View>
-                                {sectionMeals.length > 0 && (
-                                    <Text style={styles.sectionSummary}>{sectionCals} kcal</Text>
-                                )}
-                            </View>
-
-                            <View style={styles.foodCard}>
-                                {sectionMeals.length === 0 ? (
-                                    <TouchableOpacity onPress={() => handleOpenSearch(section.id)} style={styles.emptyState}>
-                                        <Text style={styles.foodPlaceholder}>Adicionar alimento...</Text>
-                                        <PlusCircle size={20} color={colors.lime400} />
-                                    </TouchableOpacity>
-                                ) : (
-                                    <View>
-                                        {sectionMeals.map(meal => (
-                                            <View key={meal.id} style={styles.mealRow}>
-                                                <View style={{ flex: 1 }}>
-                                                    <Text style={styles.mealName}>{meal.name}</Text>
-                                                    <Text style={styles.mealDetails}>
-                                                        {meal.quantity}{meal.unit} • P: {meal.protein}g • C: {meal.carbs}g
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.mealRight}>
-                                                    <Text style={styles.mealCalories}>{meal.calories}</Text>
-                                                    <TouchableOpacity
-                                                        onPress={() => handleDeleteMeal(meal.id!)}
-                                                        style={styles.deleteBtn}
-                                                    >
-                                                        <Trash2 size={16} color={colors.red500} />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                        ))}
-                                        <TouchableOpacity
-                                            style={styles.addMoreBtn}
-                                            onPress={() => handleOpenSearch(section.id)}
-                                        >
-                                            <Plus size={16} color={colors.lime400} />
-                                            <Text style={styles.addMoreText}>Adicionar mais</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
+                        <View style={styles.divider} />
+                        <View style={styles.macroItem}>
+                            <Text style={[styles.macroValue, { color: COLORS.blue }]}>{totalProtein}g</Text>
+                            <Text style={styles.macroLabel}>Prot</Text>
                         </View>
-                    );
-                })}
+                        <View style={styles.macroItem}>
+                            <Text style={[styles.macroValue, { color: COLORS.lime }]}>{totalCarbs}g</Text>
+                            <Text style={styles.macroLabel}>Carb</Text>
+                        </View>
+                        <View style={styles.macroItem}>
+                            <Text style={[styles.macroValue, { color: COLORS.warning }]}>{totalFats}g</Text>
+                            <Text style={styles.macroLabel}>Gord</Text>
+                        </View>
+                    </View>
+                </GlassView>
+
+                {/* Meals */}
+                <MealSection
+                    title="Café da Manhã"
+                    calories={breakfast.reduce((a, b) => a + b.calories, 0)}
+                    items={breakfast}
+                    onAdd={() => openSearch('Café da Manhã')}
+                    onDelete={handleDeleteMeal}
+                />
+                <MealSection
+                    title="Almoço"
+                    calories={lunch.reduce((a, b) => a + b.calories, 0)}
+                    items={lunch}
+                    onAdd={() => openSearch('Almoço')}
+                    onDelete={handleDeleteMeal}
+                />
+                <MealSection
+                    title="Snack"
+                    calories={snacks.reduce((a, b) => a + b.calories, 0)}
+                    items={snacks}
+                    onAdd={() => openSearch('Snack')}
+                    onDelete={handleDeleteMeal}
+                />
+                <MealSection
+                    title="Jantar"
+                    calories={dinner.reduce((a, b) => a + b.calories, 0)}
+                    items={dinner}
+                    onAdd={() => openSearch('Jantar')}
+                    onDelete={handleDeleteMeal}
+                />
+
             </ScrollView>
 
-            {/* New Food Search Modal */}
             <FoodSearchModal
                 visible={searchModalVisible}
                 section={activeSection}
                 onClose={() => setSearchModalVisible(false)}
-                onAddMeals={handleAddMeals} // Now accepts array
+                onAddMeals={handleAddMeals}
             />
-        </View>
+        </Screen>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, paddingHorizontal: 24, backgroundColor: colors.slate950 }, // Added bg color
-    title: { fontSize: 28, fontWeight: 'bold', color: colors.white, marginBottom: 20 },
-    scrollContent: { paddingBottom: 100 },
-
-    // Water Card
-    waterCard: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: 24, padding: 20, marginBottom: 32 },
-    waterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    waterTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    waterTitleText: { color: colors.white, fontSize: 18, fontWeight: 'bold' },
-    waterValue: { color: colors.blue400, fontWeight: 'bold', fontSize: 18 },
-    waterGoal: { color: colors.slate400, fontSize: 14 },
-    progressBar: { height: 12, backgroundColor: 'rgba(15, 23, 42, 0.5)', borderRadius: 6, marginBottom: 20, overflow: 'hidden' },
-    progressFill: { height: '100%', backgroundColor: colors.blue400, borderRadius: 6 },
-    waterActions: { flexDirection: 'row', gap: 12 },
-    waterButton: { flex: 1, backgroundColor: 'rgba(59, 130, 246, 0.2)', paddingVertical: 12, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6 },
-    waterButtonText: { color: colors.blue400, fontWeight: 'bold' },
-
-    // Food Sections
-    foodSection: { marginBottom: 24 },
-    foodHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    foodTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    foodTitleText: { color: colors.white, fontWeight: 'bold', fontSize: 16 },
-    sectionSummary: { color: colors.slate400, fontSize: 12 },
-
-    foodCard: { backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 16, padding: 4, borderWidth: 1, borderColor: colors.slate700 }, // Reduced padding
-
-    emptyState: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-    foodPlaceholder: { color: colors.slate400, fontSize: 14 },
-
-    // Meal rows
-    mealRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
-    mealName: { color: colors.white, fontWeight: '600', fontSize: 14 },
-    mealDetails: { color: colors.slate400, fontSize: 12 },
-    mealRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    mealCalories: { color: colors.white, fontWeight: 'bold', fontSize: 14 },
-    deleteBtn: { padding: 4 },
-
-    addMoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 12, gap: 8 },
-    addMoreText: { color: colors.lime400, fontSize: 12, fontWeight: 'bold' },
+    content: {
+        padding: SPACING.m,
+        paddingBottom: 100,
+    },
+    macroCard: {
+        padding: SPACING.l,
+        borderRadius: RADIUS.l,
+        marginBottom: SPACING.l,
+        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    },
+    macroRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    macroItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    macroValue: {
+        fontSize: SIZES.h3,
+        fontWeight: 'bold',
+        color: COLORS.white,
+    },
+    macroLabel: {
+        color: COLORS.textSecondary,
+        fontSize: SIZES.small,
+        marginTop: 4,
+    },
+    divider: {
+        width: 1,
+        height: 30,
+        backgroundColor: COLORS.border,
+    },
+    mealSection: {
+        marginBottom: SPACING.l,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.m,
+        paddingHorizontal: SPACING.xs,
+    },
+    sectionTitle: {
+        color: COLORS.lime,
+        fontSize: SIZES.body,
+        fontWeight: 'bold',
+    },
+    sectionCalories: {
+        color: COLORS.textSecondary,
+        fontSize: SIZES.small,
+    },
+    foodItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: SPACING.m,
+        borderRadius: RADIUS.m,
+        marginBottom: SPACING.s,
+        backgroundColor: COLORS.surface,
+    },
+    foodInfo: {
+        flex: 1,
+    },
+    foodName: {
+        color: COLORS.white,
+        fontSize: SIZES.body,
+        fontWeight: '500',
+    },
+    foodServing: {
+        color: COLORS.textSecondary,
+        fontSize: SIZES.small,
+    },
+    foodStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.m,
+    },
+    foodCal: {
+        color: COLORS.white,
+        fontWeight: 'bold',
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: SPACING.m,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: RADIUS.m,
+        borderStyle: 'dashed',
+        gap: SPACING.s,
+        marginTop: SPACING.xs,
+    },
+    addText: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    }
 });

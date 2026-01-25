@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'rea
 import { Screen } from '../../components/ui/Screen';
 import { GlassView } from '../../components/ui/GlassView';
 import { COLORS, SPACING, SIZES, RADIUS } from '../../constants/theme';
-import { ChevronLeft, ChevronRight, Calendar, X, Check, Dumbbell } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Calendar, X, Check, Dumbbell, Plus } from 'lucide-react-native';
 import { useUser } from '../../context/UserContext';
 import { WorkoutTemplateRepository, TemplateWithExercises } from '../../services/WorkoutTemplateRepository';
 
@@ -141,8 +141,25 @@ export const RoutineSettingsScreen = ({ navigation }: any) => {
                                 </View>
                             )}
 
-                            {/* Available */}
-                            <Text style={styles.sectionLabel}>Templates Disponíveis</Text>
+                            {/* Avaliable Templates */}
+                            <Text style={styles.sectionLabel}>Meus Treinos Salvos</Text>
+
+                            {/* Create Button always visible */}
+                            <TouchableOpacity
+                                style={styles.createBtn}
+                                onPress={() => {
+                                    setSelectorVisible(false);
+                                    // Navigate to Create Template Screen (assuming it exists in stack)
+                                    // If not, we might need to add it to the stack or route properly
+                                    navigation.navigate('CreateTemplate');
+                                }}
+                            >
+                                <View style={styles.createIcon}>
+                                    <Plus color={COLORS.black} size={18} />
+                                </View>
+                                <Text style={styles.createText}>Criar Novo Treino</Text>
+                            </TouchableOpacity>
+
                             {unassignedTemplates.length > 0 ? (
                                 unassignedTemplates.map(t => (
                                     <TouchableOpacity key={t.id} style={styles.templateOption} onPress={() => handleSelectTemplate(t)}>
@@ -158,8 +175,7 @@ export const RoutineSettingsScreen = ({ navigation }: any) => {
                                 ))
                             ) : (
                                 <View style={styles.emptyState}>
-                                    <Calendar color={COLORS.textSecondary} size={40} />
-                                    <Text style={styles.emptyText}>Nenhum template disponível</Text>
+                                    <Text style={styles.emptyText}>Nenhum outro treino encontrado.</Text>
                                 </View>
                             )}
                         </ScrollView>
@@ -205,6 +221,29 @@ const styles = StyleSheet.create({
     templateOptionIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(163, 230, 53, 0.15)', alignItems: 'center', justifyContent: 'center' },
     templateOptionName: { color: COLORS.white, fontSize: SIZES.body, fontWeight: '600' },
     templateOptionCount: { color: COLORS.textSecondary, fontSize: SIZES.small, marginTop: 2 },
-    emptyState: { alignItems: 'center', paddingVertical: SPACING.xl * 2 },
-    emptyText: { color: COLORS.textSecondary, marginTop: SPACING.m },
+    emptyState: { alignItems: 'center', paddingVertical: SPACING.l },
+    emptyText: { color: COLORS.textSecondary, marginTop: SPACING.s, fontStyle: 'italic' },
+
+    createBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.lime,
+        padding: SPACING.m,
+        borderRadius: RADIUS.m,
+        marginBottom: SPACING.m,
+        gap: SPACING.m
+    },
+    createIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(0,0,0,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    createText: {
+        color: COLORS.black,
+        fontSize: SIZES.body,
+        fontWeight: 'bold'
+    }
 });

@@ -11,6 +11,7 @@ interface GlassViewProps {
     gradientBorder?: boolean;
 }
 
+// Enhanced GlassView for better visibility
 export const GlassView: React.FC<GlassViewProps> = ({
     children,
     style,
@@ -20,8 +21,12 @@ export const GlassView: React.FC<GlassViewProps> = ({
 }) => {
     return (
         <View style={[styles.container, style]}>
+            {/* Fallback Background for when Blur fails or isn't supported */}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15, 23, 42, 0.6)' }]} />
+
             <BlurView intensity={intensity} tint={tint} style={StyleSheet.absoluteFill} />
-            <View style={[styles.content, { backgroundColor: COLORS.gradients.card[0] }]}>
+
+            <View style={styles.content}>
                 {children}
             </View>
         </View>
