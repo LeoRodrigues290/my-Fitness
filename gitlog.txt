@@ -1,0 +1,20 @@
+﻿HASH:9adab6170f1d08868860632c0618fb4a97e28631 DATE:2026-01-24 21:38:42 -0300 MSG:Add initial core application screens including dashboard, nutrition, routine settings, and a new GlassView component.
+HASH:8d8a72462a1c7da0daf191954a9a59c4594f5238 DATE:2026-01-24 21:22:09 -0300 MSG:Implement Dashboard, Settings, and Calendar screens, and add a NutritionRepository for data management.
+HASH:1ffad18bd7df94b1f47e721bc6ed817327dd0cc0 DATE:2026-01-24 21:12:42 -0300 MSG:set up initial database schema, data repositories, and core UI components and screens.
+HASH:9bca783c7099b47eb72087ea6d64c1790b51b206 DATE:2026-01-24 20:42:03 -0300 MSG:Fix UI and Msg
+HASH:e1666e38b1285a24e04bff4776fd16363290463f DATE:2026-01-24 19:54:20 -0300 MSG:Implement core UI components, bottom navigation, and a new theme with glassmorphism styling.
+HASH:b76bc85daba67f4e8ffc528bf7863f2f6d5687e8 DATE:2026-01-24 19:39:28 -0300 MSG:Add bottom navigation and initial screens for nutrition, exercise progress, and settings.
+HASH:932267fc66258ed0936382cf4b2d097833e00d8b DATE:2026-01-24 19:33:07 -0300 MSG: implement routine settings for weekly workout template assignment, exercise library, and bottom navigation.
+HASH:d56718d31b4faac1e72f796b722a5a3404e8e8a0 DATE:2026-01-24 18:34:14 -0300 MSG:implement new screens for exercise progress tracking, exercise library, routine settings, and app configuration.
+HASH:a21a1940b665a0a8f9c432da9cb2b910f40694be DATE:2026-01-24 17:37:11 -0300 MSG:feat: implement core navigation, workout details, profile, and settings screens with a new app header.
+HASH:453087d755ae1290717cf8e0682629fb610d41e4 DATE:2026-01-24 16:26:08 -0300 MSG:Fix TypeScript errors and runtime bugs in WeightScreen and Repositories
+HASH:f12a58ea819e7aa981db6404738cb2d55cb0d097 DATE:2026-01-24 16:22:06 -0300 MSG:Merge branch 'main' of https://github.com/LeoRodrigues290/my-Fitness
+HASH:27ab7e59ff78355abec79449dad9dafdbdcc1595 DATE:2026-01-24 16:19:45 -0300 MSG:feat: introduce full workout session tracking, template management, and exercise library with supporting UI components and database integration.
+HASH:7f735d5f4ceec5fecaf27afe8c01d2e2f1c4f120 DATE:2026-01-22 01:50:27 -0300 MSG:feat: Implement new profile and workout screens, and introduce dedicated repositories for weight, daily stats, and workout sessions.
+HASH:80c76cfe8b0df6ebcd2e4fcbb650cabc70f64a9c DATE:2026-01-22 01:00:42 -0300 MSG:Implement initial application structure, user authentication, navigation, and core fitness tracking features.
+HASH:c7aa85d088d089912ee4806edf6f112a190c3bbc DATE:2026-01-22 00:26:46 -0300 MSG:Implement the Glass Fitness App UI, introducing user management, workout tracking, and progress visualization screens, alongside updated dependencies and project documentation.
+HASH:82e4527a470890209a852c6d57534e7e8c01688b DATE:2026-01-21 22:57:14 -0300 MSG:feat: Implement core application structure including dashboard, navigation, and essential UI components.
+HASH:5f3cac94cbdeb6765b8de3b83ae35a9758455273 DATE:2026-01-21 22:15:03 -0300 MSG:Add initial fitness tracking screens for dashboard, meal, workout, and weight management, including new UI components, assets, and dependencies.
+HASH:f23bf071bc681267a314876f8c218cb53a08289c DATE:2026-01-21 21:48:37 -0300 MSG:Implement initial core features including workout, nutrition, and user management with new navigation and UI.
+HASH:7a185bcc2bb2f103b823b92b69350615d2fbf8a7 DATE:2026-01-21 20:00:39 -0300 MSG:Initialize fitness application with core structure, screens, and components.
+HASH:7f58640b7feda4bc3ca971baa2904185ea026984 DATE:2026-01-21 19:41:13 -0300 MSG:Initial commit
