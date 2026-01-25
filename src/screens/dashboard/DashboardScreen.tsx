@@ -119,6 +119,20 @@ export const DashboardScreen = ({ navigation }: any) => {
         'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80',
     ];
 
+    // Helper to get image based on workout name
+    const getWorkoutImage = (name: string) => {
+        const lower = name.toLowerCase();
+        if (lower.includes('costa') || lower.includes('back')) return 'https://images.unsplash.com/photo-1603287681836-e6c33e21e7d2?q=80';
+        if (lower.includes('peito') || lower.includes('chest')) return 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80';
+        if (lower.includes('perna') || lower.includes('leg')) return 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?q=80';
+        if (lower.includes('ombro') || lower.includes('shoulder')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80';
+        if (lower.includes('braço') || lower.includes('arm')) return 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80'; // Reusing for now
+        if (lower.includes('cardio') || lower.includes('run')) return 'https://images.unsplash.com/photo-1538805060512-e219615df350?q=80';
+        return 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80'; // Generic Gym
+    };
+
+    const heroImage = todayTemplate ? getWorkoutImage(todayTemplate.name) : 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80'; // Yoga/Chill for rest
+
     return (
         <Screen>
             <AppHeader showNotification={true} />
@@ -218,12 +232,12 @@ export const DashboardScreen = ({ navigation }: any) => {
                                 templateName: todayTemplate.name
                             });
                         } else {
-                            navigation.navigate('WorkoutRunner', {});
+                            navigation.navigate('WorkoutRunner', {}); // Free workout
                         }
                     }}
                 >
                     <ImageBackground
-                        source={{ uri: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070&auto=format&fit=crop' }}
+                        source={{ uri: heroImage }}
                         style={styles.heroImage}
                         imageStyle={{ borderRadius: 32 }}
                     >
@@ -231,25 +245,35 @@ export const DashboardScreen = ({ navigation }: any) => {
 
                         <View style={styles.heroContent}>
                             <View style={styles.tagsRow}>
-                                <View style={[styles.tag, { backgroundColor: 'rgba(163, 230, 53, 0.2)', borderColor: 'rgba(163, 230, 53, 0.3)' }]}>
-                                    <Text style={[styles.tagText, { color: COLORS.lime }]}>
-                                        {todayTemplate ? `${todayTemplate.exercises.length} exercícios` : 'Treino Livre'}
-                                    </Text>
-                                </View>
-                                {todayTemplate && (
+                                {todayTemplate ? (
+                                    <>
+                                        <View style={[styles.tag, { backgroundColor: 'rgba(163, 230, 53, 0.2)', borderColor: 'rgba(163, 230, 53, 0.3)' }]}>
+                                            <Text style={[styles.tagText, { color: COLORS.lime }]}>
+                                                Agendado para hoje
+                                            </Text>
+                                        </View>
+                                        <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                                            <Text style={[styles.tagText, { color: COLORS.white }]}>
+                                                {todayTemplate.exercises?.length || 0} exercícios
+                                            </Text>
+                                        </View>
+                                    </>
+                                ) : (
                                     <View style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.1)', borderColor: 'rgba(255,255,255,0.1)' }]}>
-                                        <Text style={[styles.tagText, { color: COLORS.white }]}>Template</Text>
+                                        <Text style={[styles.tagText, { color: COLORS.white }]}>Dia Livre ou Descanso</Text>
                                     </View>
                                 )}
                             </View>
 
                             <Text style={styles.heroTitle}>
-                                {todayTemplate ? todayTemplate.name : 'Treino Livre'}
+                                {todayTemplate ? todayTemplate.name : 'Nenhum treino agendado'}
                             </Text>
                             <Text style={styles.heroSubtitle}>
                                 {todayTemplate
-                                    ? todayTemplate.exercises.slice(0, 3).map(e => e.exercise_name).join(', ')
-                                    : 'Comece um treino personalizado'}
+                                    ? (todayTemplate.exercises && todayTemplate.exercises.length > 0
+                                        ? todayTemplate.exercises.slice(0, 3).map(e => e.exercise_name).join(', ') + '...'
+                                        : 'Toque para começar')
+                                    : 'Aproveite para descansar ou inicie um treino avulso.'}
                             </Text>
 
                             <TouchableOpacity
@@ -266,7 +290,7 @@ export const DashboardScreen = ({ navigation }: any) => {
                                 }}
                             >
                                 <Play fill={COLORS.background} color={COLORS.background} size={18} />
-                                <Text style={styles.startButtonText}>Começar Treino</Text>
+                                <Text style={styles.startButtonText}>{todayTemplate ? 'Iniciar Treino Agora' : 'Treino Livre'}</Text>
                             </TouchableOpacity>
                         </View>
                     </ImageBackground>

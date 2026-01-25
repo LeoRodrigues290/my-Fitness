@@ -1,25 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { ChevronLeft, ChevronRight, Settings, Dumbbell, Moon, ArrowLeft } from 'lucide-react-native';
-import { useUser, WeekSchedule } from '../../context/UserContext';
+import { useUser } from '../../context/UserContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { colors } from '../../constants/colors';
-import { getWorkoutById, workoutOptions } from '../../constants/workouts';
+import { WorkoutTemplateRepository } from '../../services/WorkoutTemplateRepository';
 
 const { width } = Dimensions.get('window');
-
-// Map day index (0=Sun) to schedule key
-const DAY_INDEX_TO_KEY: (keyof WeekSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-// Get workout label from ID
-const getWorkoutLabel = (workoutId: string): string => {
-    const option = workoutOptions.find(o => o.value === workoutId);
-    return option?.label || workoutId;
-};
 
 interface CalendarScreenProps {
     onBack: () => void;
@@ -28,9 +20,10 @@ interface CalendarScreenProps {
 
 export const CalendarScreen: React.FC<CalendarScreenProps> = ({ onBack, onOpenSettings }) => {
     const insets = useSafeAreaInsets();
-    const { userPreferences } = useUser();
+    const { currentUser } = useUser();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
+    const [scheduleMap, setScheduleMap] = useState<{ [key: number]: string }>({});
 
     const daysInMonth = eachDayOfInterval({
         start: startOfMonth(currentDate),
@@ -40,15 +33,32 @@ export const CalendarScreen: React.FC<CalendarScreenProps> = ({ onBack, onOpenSe
     const startDay = getDay(startOfMonth(currentDate));
     const emptyDays = Array(startDay).fill(null);
 
-    // Get workout for a date based on userPreferences.schedule
-    const getWorkoutForDate = (date: Date): { id: string; label: string; isRest: boolean } => {
-        const dayIndex = getDay(date); // 0=Sun, 1=Mon, etc
-        const dayKey = DAY_INDEX_TO_KEY[dayIndex];
-        const workoutId = userPreferences.schedule[dayKey];
-        const isRest = workoutId === 'rest';
+    // Load schedule from DB
+    useFocusEffect(
+        useCallback(() => {
+            const loadSchedule = async () => {
+                if (!currentUser) return;
+                const templates = await WorkoutTemplateRepository.getWeeklyTemplates(currentUser.id);
+
+                const newMap: { [key: number]: string } = {};
+                templates.forEach(t => {
+                    if (t.day_assigned !== null) {
+                        newMap[t.day_assigned] = t.name;
+                    }
+                });
+                setScheduleMap(newMap);
+            };
+            loadSchedule();
+        }, [currentUser])
+    );
+
+    const getWorkoutForDate = (date: Date): { label: string; isRest: boolean } => {
+        const dayIndex = getDay(date); // 0=Sun, 1=Mon...
+        const workoutName = scheduleMap[dayIndex];
+        const isRest = !workoutName; // If no workout assigned, assume rest
+
         return {
-            id: workoutId,
-            label: getWorkoutLabel(workoutId),
+            label: workoutName || 'Descanso',
             isRest
         };
     };

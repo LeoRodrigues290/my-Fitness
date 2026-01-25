@@ -59,6 +59,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
                 </TouchableOpacity>
 
+                <Text style={styles.sectionTitle}>CORPO & METAS</Text>
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Goals')}>
+                    <TrendingUp size={20} color={colors.white} />
+                    <Text style={styles.menuItemText}>Metas de Nutrição (Macros)</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Weight')}>
+                    <View style={{ transform: [{ rotate: '-90deg' }] }}>
+                        <Dumbbell size={20} color={colors.white} />
+                    </View>
+                    <Text style={styles.menuItemText}>Registro de Peso</Text>
+                    <ChevronRight size={16} color={colors.slate600} style={styles.menuArrow} />
+                </TouchableOpacity>
+
                 <Text style={styles.sectionTitle}>CONTA</Text>
 
 

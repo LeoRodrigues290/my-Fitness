@@ -92,5 +92,10 @@ export const NutritionRepository = {
     deleteCombo: async (comboId: number) => {
         const db = await getDBConnection();
         await db.runAsync('DELETE FROM food_combos WHERE id = ?', comboId);
+    },
+
+    deleteMeal: async (id: number) => {
+        const db = await getDBConnection();
+        await db.runAsync('DELETE FROM meals WHERE id = ?', id);
     }
 };
